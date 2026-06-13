@@ -3,33 +3,33 @@
 Servers:
   NameServer:
     - port: 5058
-      external_address: 127.0.0.1:5058
+      address: 192.168.0.65:5058
       proxies:
-        - protocol: TCP
-          address: 127.0.0.1:4533
+        - protocol: UDP
+          address: 192.168.0.65:4533
 
     - port: 27000
-      external_address: 127.0.0.1:27000
+      external_address: 192.168.0.65:27000
 
   MasterServer:
     - port: 5055
-      external_address: 127.0.0.1:5055
+      external_address: 192.168.0.65:5055
       proxies:
         - protocol: TCP
-          address: 127.0.0.1:4530
+          address: 192.168.0.65:4530
 
     - port: 27001
-      external_address: 127.0.0.1:27001
+      external_address: 192.168.0.65:27001
 
   GameServer:
     - port: 5056
-      external_address: 127.0.0.1:5056
+      external_address: 192.168.0.65:5056
       proxies:
         - protocol: TCP
-          address: 127.0.0.1:4531
+          address: 192.168.0.65:4531
 
     - port: 27002
-      external_address: 127.0.0.1:27002
+      external_address: 192.168.0.65:27002
 
 
 # Misc settings

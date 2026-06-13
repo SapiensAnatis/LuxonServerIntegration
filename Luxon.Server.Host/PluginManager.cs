@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Luxon.Server.Plugin;
@@ -5,7 +6,7 @@ using SharpYaml;
 
 namespace Luxon.Server.Host;
 
-internal class PluginManager
+internal sealed class PluginManager
 {
     private readonly Dictionary<uint, PluginDetails> _pluginIdToPluginMap = [];
 
@@ -18,16 +19,16 @@ internal class PluginManager
             plugins = YamlSerializer.Deserialize<List<PluginConfig>>(fs);
         }
 
+        if (plugins is not { Count: > 0 })
+        {
+            return;
+        }
+
         // TODO: find a better way to determine the plugin load path
         string pluginsBasePath = Path.Join(
             AppContext.BaseDirectory,
             "../../../../Luxon.Server.GluonPlugin/bin/Debug/net10.0/"
         );
-
-        if (plugins is not { Count: > 0 })
-        {
-            return;
-        }
 
         foreach (var plugin in plugins)
         {
@@ -63,6 +64,8 @@ internal class PluginManager
 
             uint id = LuxonServerRuntime.RegisterGamePlugin(plugin.Name);
 
+            Debug.Assert(id != 0);
+
             _pluginIdToPluginMap.Add(id, new PluginDetails(plugin.Name, factory, loadContext));
         }
     }
@@ -79,7 +82,7 @@ internal class PluginManager
         return true;
     }
 
-    private record PluginDetails(
+    private sealed record PluginDetails(
         string Name,
         IPluginFactory Factory,
         PluginLoadContext LoadContext

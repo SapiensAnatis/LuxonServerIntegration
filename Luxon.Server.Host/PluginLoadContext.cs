@@ -14,7 +14,7 @@ internal sealed class PluginLoadContext(string pluginPath)
         {
             // Load the same Luxon.Server.Plugin assembly as the host app, so that checks like
             // pluginType.IsAssignableTo(typeof(IPluginFactory)) actually work. Returning null forwards
-            // to the default resolver,
+            // to the default resolver.
             return null;
         }
 
