@@ -7,7 +7,7 @@ public class GluonPluginFactory : IPluginFactory
 {
     public GamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config)
     {
-        Console.WriteLine("Hello world from GluonPlugin");
+        Console.WriteLine("GluonPlugin: Create");
         return new GluonPlugin();
     }
 }
