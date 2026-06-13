@@ -1,0 +1,5 @@
+- Name: "GluonPlugin"
+  Version: "v1"
+  AssemblyName: "Luxon.Server.GluonPlugin.dll"
+  Type: "Luxon.Server.GluonPlugin.GluonPluginFactory"
+  
