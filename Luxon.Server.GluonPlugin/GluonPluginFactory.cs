@@ -5,7 +5,7 @@ namespace Luxon.Server.GluonPlugin;
 
 public class GluonPluginFactory : IPluginFactory
 {
-    public GamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config)
+    public IGamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config)
     {
         Console.WriteLine("GluonPlugin: Create");
         return new GluonPlugin();

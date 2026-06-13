@@ -5,11 +5,11 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host;
 
-internal class GameManager
+internal sealed class GameManager
 {
     private readonly Dictionary<nint, GameAdditionalFields> _additionalFields = [];
 
-    public void AddPluginToGame(nint gameHandle, uint pluginId, GamePlugin pluginInstance)
+    public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {
         ref var gameAdditionalFields = ref CollectionsMarshal.GetValueRefOrAddDefault(
             _additionalFields,
@@ -32,7 +32,7 @@ internal class GameManager
     public bool TryGetGamePlugin(
         nint gameHandle,
         uint pluginId,
-        [NotNullWhen(true)] out GamePlugin? pluginInstance
+        [NotNullWhen(true)] out IGamePlugin? pluginInstance
     )
     {
         pluginInstance = null;

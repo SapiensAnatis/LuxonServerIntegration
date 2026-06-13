@@ -4,5 +4,5 @@ namespace Luxon.Server.Plugin;
 
 public interface IPluginFactory
 {
-    GamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config);
+    IGamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config);
 }

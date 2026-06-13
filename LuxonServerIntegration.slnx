@@ -6,9 +6,8 @@
     <File Path="nuget.config" />
     <File Path="README.md" />
   </Folder>
-  <Folder Name="/Solution Items/.claude/" />
-  <Folder Name="/Solution Items/.claude/notes/">
-    <File Path=".claude\notes\API.md" />
+  <Folder Name="/Solution Items/docs/">
+    <File Path="docs\API-changes.md" />
   </Folder>
   <Project Path="Luxon.Server.GluonPlugin/Luxon.Server.GluonPlugin.csproj" />
   <Project Path="Luxon.Server.Host/Luxon.Server.Host.csproj" />

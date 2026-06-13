@@ -4,5 +4,5 @@ namespace Luxon.Server.Host;
 
 internal sealed class GameAdditionalFields
 {
-    public Dictionary<uint, GamePlugin> Plugins { get; } = [];
+    public Dictionary<uint, IGamePlugin> Plugins { get; } = [];
 }

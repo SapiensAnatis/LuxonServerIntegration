@@ -2,47 +2,33 @@
 
 namespace Luxon.Server.GluonPlugin;
 
-internal sealed class GluonPlugin : GamePlugin
+internal sealed class GluonPlugin : IGamePlugin
 {
     public GluonPlugin()
     {
         Console.WriteLine("GluonPlugin: Constructor");
     }
 
-    public override PluginResult OnAttach()
-    {
-        Console.WriteLine("GluonPlugin: OnAttach");
-        return PluginResult.Continue;
-    }
-
-    public override void OnCreateGame(ICreateGameCallInfo info)
+    public void OnCreateGame(ICreateGameCallInfo info)
     {
         Console.WriteLine("GluonPlugin: OnCreateGame");
 
-        // object? playerId = info.Request.ActorProperties["PlayerId"];
-        //
-        // Console.WriteLine($"PlayerId: {playerId}");
-        //
-        // info.Request.ActorProperties.Add("ViewerId", playerId);
+        object? playerId = info.Request.ActorProperties["PlayerId"];
 
-        // info.Continue();
+        Console.WriteLine($"PlayerId: {playerId}");
+
+        info.Request.ActorProperties.Add("ViewerId", playerId);
+
+        info.Continue();
     }
 
-    public override PluginResult BeforeJoinGame()
+    public void BeforeJoinGame()
     {
         Console.WriteLine("GluonPlugin: BeforeJoinGame");
-        return PluginResult.Continue;
     }
 
-    public override PluginResult OnJoinGame()
+    public void OnJoinGame()
     {
         Console.WriteLine("GluonPlugin: OnJoinGame");
-        return PluginResult.Continue;
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        base.Dispose(disposing);
-        Console.WriteLine("Disposing GluonPlugin");
     }
 }

@@ -70,7 +70,7 @@ internal sealed class PluginManager
         }
     }
 
-    public bool TryCreatePlugin(uint id, [NotNullWhen(true)] out GamePlugin? plugin)
+    public bool TryCreatePlugin(uint id, [NotNullWhen(true)] out IGamePlugin? plugin)
     {
         plugin = null;
         if (!_pluginIdToPluginMap.TryGetValue(id, out PluginDetails? pluginDetails))

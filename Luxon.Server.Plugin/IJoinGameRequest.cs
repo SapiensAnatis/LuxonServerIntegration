@@ -5,6 +5,6 @@ namespace LuxonServer.Plugin;
 
 public interface IJoinGameRequest : IOperationRequest
 {
-    int ActorNr { get; set; }
+    int ActorNr { get; }
     IDictionary<object, object?> ActorProperties { get; }
 }

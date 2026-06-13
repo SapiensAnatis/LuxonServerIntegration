@@ -47,18 +47,18 @@ manager.Stop();      // signal stop from another thread
 ### `LuxonServerImports` (callback registration)
 All fields are optional delegates wired into the native server:
 
-| Callback | When it fires |
-|---|---|
-| `GamePluginOnAttach` | Plugin attached to a game |
-| `GamePluginOnCreateGame` | Game creation request |
-| `GamePluginBeforeJoin` / `OnJoinGame` | Before/after peer joins |
-| `GamePluginOnLeave` | Peer leaves |
-| `GamePluginOnRaiseEvent` | Event raised in-game |
-| `GamePluginBefore/OnSetProperties` | Property update hooks |
-| `GamePluginBefore/OnCloseGame` | Game closing |
-| `AuthPluginOnAuthenticate` | Custom authentication |
-| `CustomLogSink` | Intercept log messages |
-| `HookpointMasterServer*` | Low-level master server overrides |
+| Callback                              | When it fires                     |
+|---------------------------------------|-----------------------------------|
+| `GamePluginOnAttach`                  | Plugin attached to a game         |
+| `GamePluginOnCreateGame`              | Game creation request             |
+| `GamePluginBeforeJoin` / `OnJoinGame` | Before/after peer joins           |
+| `GamePluginOnLeave`                   | Peer leaves                       |
+| `GamePluginOnRaiseEvent`              | Event raised in-game              |
+| `GamePluginBefore/OnSetProperties`    | Property update hooks             |
+| `GamePluginBefore/OnCloseGame`        | Game closing                      |
+| `AuthPluginOnAuthenticate`            | Custom authentication             |
+| `CustomLogSink`                       | Intercept log messages            |
+| `HookpointMasterServer*`              | Low-level master server overrides |
 
 ### `ServerManagerConfig` (fluent builder)
 - `AddServer(type, port)` — add a NameServer / MasterServer / GameServer

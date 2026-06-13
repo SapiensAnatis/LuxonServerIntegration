@@ -1,7 +1,5 @@
-﻿using System.Runtime.InteropServices;
-using Luxon.Server;
+﻿using Luxon.Server;
 using Luxon.Server.Host;
-using Luxon.Server.Plugin;
 
 var pluginManager = new PluginManager();
 pluginManager.LoadPluginsFromConfig(Path.Join(AppContext.BaseDirectory, "plugin.yml"));
