@@ -4,7 +4,7 @@ using System.Runtime.Loader;
 namespace Luxon.Server.Host;
 
 internal sealed class PluginLoadContext(string pluginPath)
-    : AssemblyLoadContext(name: "plugin", isCollectible: true)
+    : AssemblyLoadContext(name: $"PluginLoadContext_{pluginPath}", isCollectible: true)
 {
     private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
 

@@ -6,7 +6,7 @@ internal sealed class GluonPlugin : GamePlugin
 {
     public GluonPlugin()
     {
-        Console.WriteLine("GluonPlugin: created");
+        Console.WriteLine("GluonPlugin: Constructor");
     }
 
     public override PluginResult OnAttach()
@@ -19,13 +19,13 @@ internal sealed class GluonPlugin : GamePlugin
     {
         Console.WriteLine("GluonPlugin: OnCreateGame");
 
-        object? playerId = info.Request.ActorProperties["PlayerId"];
+        // object? playerId = info.Request.ActorProperties["PlayerId"];
+        //
+        // Console.WriteLine($"PlayerId: {playerId}");
+        //
+        // info.Request.ActorProperties.Add("ViewerId", playerId);
 
-        Console.WriteLine($"PlayerId: {playerId}");
-
-        info.Request.ActorProperties.Add("ViewerId", playerId);
-
-        info.Continue();
+        // info.Continue();
     }
 
     public override PluginResult BeforeJoinGame()

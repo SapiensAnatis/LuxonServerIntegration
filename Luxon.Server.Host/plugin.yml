@@ -1,5 +1,5 @@
 - Name: "GluonPlugin"
-  Version: "v1"
+  Version: "v1" # Unused for now, will eventually be used to set the file path
   AssemblyName: "Luxon.Server.GluonPlugin.dll"
   Type: "Luxon.Server.GluonPlugin.GluonPluginFactory"
   
