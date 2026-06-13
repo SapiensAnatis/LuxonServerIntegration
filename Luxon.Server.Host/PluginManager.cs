@@ -24,19 +24,12 @@ internal sealed class PluginManager
             return;
         }
 
-        // TODO: find a better way to determine the plugin load path
-        string pluginsBasePath = Path.Join(
-            AppContext.BaseDirectory,
-            "../../../../Luxon.Server.GluonPlugin/bin/Debug/net10.0/"
-        );
-
         foreach (var plugin in plugins)
         {
-            string pluginPath = Path.Join(pluginsBasePath, plugin.AssemblyName);
+            var loadContext = new PluginAssemblyLoadContext(plugin);
 
-            var loadContext = new PluginLoadContext(pluginPath);
+            Assembly pluginAssembly = loadContext.LoadPlugin();
 
-            Assembly pluginAssembly = loadContext.LoadFromAssemblyPath(pluginPath);
             Type? pluginType = pluginAssembly.GetType(plugin.Type);
 
             if (pluginType is null)
@@ -85,6 +78,6 @@ internal sealed class PluginManager
     private sealed record PluginDetails(
         string Name,
         IPluginFactory Factory,
-        PluginLoadContext LoadContext
+        PluginAssemblyLoadContext AssemblyLoadContext
     );
 }
