@@ -1,5 +1,31 @@
 # LuxonServerIntgeration
 
+## Architecture
+
+```mermaid
+graph TD
+    libluxon["libluxon_server_ffi.so\n(LuxonServer native engine)"]
+    config["plugin.yml\n(plugin config)"]
+
+    subgraph Host["Luxon.Server.Host"]
+        host_desc["Loads libluxonserver and starts the game server. Handles plugin management and calls the appropriate managed methods on plugins."]
+    end
+
+    subgraph Gluon["Luxon.Server.GluonPlugin"]
+        gluon_desc["Reimplementation of the Dragalia Lost plugin for Luxon."]
+    end
+
+    subgraph SDK["Luxon.Server.Plugin"]
+        sdk_desc["Plugin SDK. Exposes interfaces (IPluginFactory, IGamePlugin, etc.) for developing plugins against."]
+    end
+
+    libluxon --> Host
+    config --> Host
+    Host -. "loads via AssemblyLoadContext" .-> Gluon
+    SDK --> Host
+    SDK --> Gluon
+```
+
 ## Setup
 
 Download a .nupkg from [GitLab](https://gitlab.com/niansa/LuxonServerSharp/-/artifacts) and place it in the nuget/
