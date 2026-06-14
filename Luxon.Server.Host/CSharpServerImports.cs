@@ -68,6 +68,7 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
 
         ThrowIfNoResultSet(info.Result);
 
+        // We cannot call InsertActorProperties at this stage as there is no GamePeer
         request.Replace(managedRequest);
 
         return info.Result.Value;
@@ -80,13 +81,14 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
     )
     {
         // TODO: this doesn't fire for disconnects due to errors
+        // TODO: Luxon swagfaults when leaving a game
 
         gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
         return LuxonGamePluginResult.Continue;
     }
 
-    public static void ThrowIfNoResultSet([NotNull] LuxonGamePluginResult? result)
+    private static void ThrowIfNoResultSet([NotNull] LuxonGamePluginResult? result)
     {
         if (result == null)
         {
