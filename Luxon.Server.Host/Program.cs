@@ -1,5 +1,12 @@
-﻿using Luxon.Server;
+﻿using System.Runtime.InteropServices;
+using Luxon.Server;
 using Luxon.Server.Host;
+
+if (Environment.GetEnvironmentVariable("LUXON_CUSTOM_LIB_PATH") is { } customLibPath)
+{
+    Console.WriteLine($"Using custom lib path: {customLibPath}");
+    LuxonNativeLibrary.SetCustomLibraryPath(customLibPath);
+}
 
 var pluginManager = new PluginManager();
 pluginManager.LoadPluginsFromConfig(Path.Join(AppContext.BaseDirectory, "plugin.yml"));
