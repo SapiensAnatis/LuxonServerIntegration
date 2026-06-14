@@ -34,10 +34,8 @@ LuxonServerRuntime.UnhandledCallbackException += (sender) =>
 using var config = ServerManagerConfig.Create();
 
 config
-    .AddServer(LuxonServerType.MasterServer, port: 5055)
-    .AddServer(LuxonServerType.GameServer, port: 5056)
-    .AddEndpoint(LuxonServerType.MasterServer, LuxonServerProtocol.Udp, "192.168.0.65:5055")
-    .AddEndpoint(LuxonServerType.GameServer, LuxonServerProtocol.Udp, "192.168.0.65:5056");
+    .AddServerAndEndpoint(LuxonServerType.MasterServer, 5055, "192.168.0.65:5055")
+    .AddServerAndEndpoint(LuxonServerType.GameServer, 5056, "192.168.0.65:5056");
 
 using var serverManager = ServerManager.CreateFromConfig(config);
 
