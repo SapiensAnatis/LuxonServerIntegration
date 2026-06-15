@@ -5,23 +5,11 @@ namespace Luxon.Server.Host.Plugin;
 
 internal sealed class JoinGameRequest : IJoinGameRequest
 {
-    public byte OperationCode
-    {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
-    }
+    public required byte OperationCode { get; set; }
 
-    public Dictionary<byte, Value> Parameters
-    {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
-    }
+    public required Dictionary<byte, Value> Parameters { get; set; }
 
-    public int ActorNr
-    {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
-    }
+    public required int ActorNr { get; init; }
 
-    public required IDictionary<object, object?> ActorProperties { get; internal set; }
+    public required IDictionary<object, object?> ActorProperties { get; init; }
 }

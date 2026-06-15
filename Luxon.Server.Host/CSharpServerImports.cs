@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Luxon.Ser;
 using Luxon.Server.Host.Collections;
@@ -56,7 +57,13 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
 
         var proxy = new TypelessLuxonDictionaryProxy(actorPropertiesDictionary);
 
-        JoinGameRequest pluginRequest = new() { ActorProperties = proxy };
+        JoinGameRequest pluginRequest = new()
+        {
+            ActorProperties = proxy,
+            ActorNr = 1,
+            OperationCode = opr.OperationCode,
+            Parameters = opr.Parameters,
+        };
 
         CreateGameCallInfo info = new()
         {
@@ -64,9 +71,24 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
             Request = pluginRequest,
         };
 
-        plugin.OnCreateGame(info);
+        ThreadPool.QueueUserWorkItem(
+            static state =>
+            {
+                try
+                {
+                    state.Plugin.OnCreateGame(state.Info);
+                }
+                catch
+                {
+                    state.Info.Fail();
+                    throw;
+                }
+            },
+            new ThreadpoolState<ICreateGameCallInfo>(plugin, info),
+            preferLocal: false
+        );
 
-        ThrowIfNoResultSet(info.Result);
+        info.WaitForResult();
 
         // We cannot call InsertActorProperties at this stage as there is no GamePeer
         request.Replace(managedRequest);
@@ -81,20 +103,16 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
     )
     {
         // TODO: this doesn't fire for disconnects due to errors
-        // TODO: Luxon swagfaults when leaving a game
 
         gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
         return LuxonGamePluginResult.Continue;
     }
 
-    private static void ThrowIfNoResultSet([NotNull] LuxonGamePluginResult? result)
+    private readonly struct ThreadpoolState<TInfo>(IGamePlugin plugin, TInfo info)
+        where TInfo : ICallInfo
     {
-        if (result == null)
-        {
-            throw new InvalidOperationException(
-                "Plugin callback did not call any processing result method on ICallInfo"
-            );
-        }
+        public readonly IGamePlugin Plugin = plugin;
+        public readonly TInfo Info = info;
     }
 }

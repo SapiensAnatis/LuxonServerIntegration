@@ -20,6 +20,10 @@ internal sealed class GluonPlugin : IGamePlugin
         info.Request.ActorProperties.Add("ViewerId", playerId);
 
         info.Continue();
+
+        Thread.Sleep(TimeSpan.FromSeconds(5));
+
+        Console.WriteLine("Demo of doing work after callbacks without blocking Luxon");
     }
 
     public void BeforeJoinGame()
