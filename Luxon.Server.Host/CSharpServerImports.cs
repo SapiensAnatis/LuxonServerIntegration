@@ -8,8 +8,19 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host;
 
-internal sealed class CSharpServerImports(PluginManager pluginManager, GameManager gameManager)
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "Object lives for entire process lifetime"
+)]
+internal sealed class CSharpServerImports(
+    ServerManager serverManager,
+    PluginManager pluginManager,
+    GameManager gameManager
+)
 {
+    private readonly ThreadLocal<PreviousCallbackContext?> _previousCallbackContext = new();
+
     public void GamePluginOnAttach(uint pluginId, Game game)
     {
         if (!pluginManager.TryCreatePlugin(pluginId, out IGamePlugin? plugin))
@@ -29,6 +40,31 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
         bool createIfNotExist
     )
     {
+        if (_previousCallbackContext.Value is { } previousContext)
+        {
+            Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
+
+            Debug.Assert(
+                previousContext.PluginCallback.IsCompleted,
+                "The processing loop should only invoke the restarter once PluginCallback.IsCompleted is true"
+            );
+
+            if (!previousContext.Info.HasResult())
+            {
+                throw new InvalidOperationException(
+                    "Failed to set result before returning from plugin!"
+                );
+            }
+
+            request.Replace(previousContext.ManagedRequest);
+
+            var value = previousContext.Info.Result.Value;
+
+            _previousCallbackContext.Value = null;
+            previousContext.Info.Dispose();
+            return value;
+        }
+
         if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
         {
             throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
@@ -65,35 +101,60 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
             Parameters = opr.Parameters,
         };
 
-        CreateGameCallInfo info = new()
+        CreateGameCallInfo info = new(pluginRequest, createIfNotExist);
+
+        Task pluginCallback = plugin.OnCreateGame(info);
+
+        if (pluginCallback.IsCompleted)
         {
-            CreateIfNotExists = createIfNotExist,
-            Request = pluginRequest,
-        };
+            // The plugin callback completed synchronously. Perform standard checks.
 
-        ThreadPool.QueueUserWorkItem(
-            static state =>
+            Console.WriteLine("GamePluginOnCreateGame: Callback returned synchronously");
+
+            if (!info.HasResult())
             {
-                try
-                {
-                    state.Plugin.OnCreateGame(state.Info);
-                }
-                catch
-                {
-                    state.Info.Fail();
-                    throw;
-                }
-            },
-            new ThreadpoolState<ICreateGameCallInfo>(plugin, info),
-            preferLocal: false
-        );
+                throw new InvalidOperationException(
+                    "Failed to set result before returning from plugin!"
+                );
+            }
 
-        info.WaitForResult();
+            goto HasResult;
+        }
+
+        // If we are here, the plugin callback has suspended due to the use of await.
+
+        if (info.HasResult())
+        {
+            // If the plugin callback set a result before awaiting, we can consume that without restarting the command.
+
+            Console.WriteLine(
+                "GamePluginOnCreateGame: Plugin suspended, but set result before doing so"
+            );
+
+            goto HasResult;
+        }
+
+        Console.WriteLine("GamePluginOnCreateGame: Plugin suspended without setting result");
+
+        _previousCallbackContext.Value = new(pluginCallback, info, managedRequest);
+
+        if (!gameManager.taskQueue.TryAdd(pluginCallback, serverManager.TakeCommandRestarter()))
+        {
+            throw new InvalidOperationException("Failed to add to task queue");
+        }
+
+        Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
+
+        return LuxonGamePluginResult.Continue;
+
+        HasResult:
 
         // We cannot call InsertActorProperties at this stage as there is no GamePeer
         request.Replace(managedRequest);
 
-        return info.Result.Value;
+        var infoValue = info.Result.Value;
+        info.Dispose();
+        return infoValue;
     }
 
     public LuxonGamePluginResult GamePluginOnCloseGame(
@@ -109,10 +170,9 @@ internal sealed class CSharpServerImports(PluginManager pluginManager, GameManag
         return LuxonGamePluginResult.Continue;
     }
 
-    private readonly struct ThreadpoolState<TInfo>(IGamePlugin plugin, TInfo info)
-        where TInfo : ICallInfo
-    {
-        public readonly IGamePlugin Plugin = plugin;
-        public readonly TInfo Info = info;
-    }
+    private record PreviousCallbackContext(
+        Task PluginCallback,
+        CallInfo Info,
+        Message ManagedRequest
+    );
 }

@@ -3,9 +3,11 @@ using LuxonServer.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal sealed class CreateGameCallInfo : CallInfo, ICreateGameCallInfo
+internal sealed class CreateGameCallInfo(IJoinGameRequest request, bool createIfNotExists)
+    : CallInfo,
+        ICreateGameCallInfo
 {
-    public required IJoinGameRequest Request { get; init; }
+    public IJoinGameRequest Request { get; } = request;
 
-    public required bool CreateIfNotExists { get; init; }
+    public bool CreateIfNotExists { get; set; } = createIfNotExists;
 }

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -8,6 +9,8 @@ namespace Luxon.Server.Host;
 internal sealed class GameManager
 {
     private readonly Dictionary<nint, GameAdditionalFields> _additionalFields = [];
+
+    public ConcurrentDictionary<Task, CommandRestarter> taskQueue = new();
 
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {

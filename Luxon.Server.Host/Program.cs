@@ -13,7 +13,14 @@ pluginManager.LoadPluginsFromConfig(Path.Join(AppContext.BaseDirectory, "plugin.
 
 var gameManager = new GameManager();
 
-var csImports = new CSharpServerImports(pluginManager, gameManager);
+using var config = ServerManagerConfig.Create();
+
+config
+    .AddServerAndEndpoint(LuxonServerType.MasterServer, 5055, "192.168.0.65:5055")
+    .AddServerAndEndpoint(LuxonServerType.GameServer, 5056, "192.168.0.65:5056");
+using var serverManager = ServerManager.CreateFromConfig(config);
+
+var csImports = new CSharpServerImports(serverManager, pluginManager, gameManager);
 
 var imports = new LuxonServerImports
 {
@@ -31,12 +38,20 @@ LuxonServerRuntime.UnhandledCallbackException += (sender) =>
 
 // Reading the config from YAML doesn't appear to start any servers. I might be doing something wrong!
 
-using var config = ServerManagerConfig.Create();
+while (serverManager.RunOnce())
+{
+    foreach (var task in gameManager.taskQueue.Keys)
+    {
+        if (task.IsCompleted)
+        {
+            if (!gameManager.taskQueue.TryRemove(task, out CommandRestarter? restarter))
+            {
+                throw new InvalidOperationException("Failed to remove task");
+            }
 
-config
-    .AddServerAndEndpoint(LuxonServerType.MasterServer, 5055, "192.168.0.65:5055")
-    .AddServerAndEndpoint(LuxonServerType.GameServer, 5056, "192.168.0.65:5056");
-
-using var serverManager = ServerManager.CreateFromConfig(config);
-
-serverManager.Run();
+            restarter.Restart();
+            // TODO: this segfaults
+            // restarter.Dispose();
+        }
+    }
+}

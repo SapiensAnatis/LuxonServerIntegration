@@ -40,6 +40,12 @@ internal abstract class CallInfo : ICallInfo, IDisposable
         }
     }
 
+    [MemberNotNullWhen(true, nameof(Result))]
+    public bool HasResult()
+    {
+        return _resultSetEvent.IsSet && Result != null;
+    }
+
     public void Dispose()
     {
         _disposed = true;
