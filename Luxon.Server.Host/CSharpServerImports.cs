@@ -98,7 +98,8 @@ internal sealed class CSharpServerImports(
 
         if (pluginCallback.IsCompleted || info.HasResult())
         {
-            // The plugin callback completed synchronously. Perform standard checks.
+            // The plugin callback completed synchronously, or returned a result before suspending. Either way, we do
+            // not need to suspend the Luxon command.
 
             Console.WriteLine("GamePluginOnCreateGame: Callback returned status synchronously");
 
