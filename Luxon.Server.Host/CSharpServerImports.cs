@@ -94,14 +94,29 @@ internal sealed class CSharpServerImports(
         CreateGameCallInfo info = new(pluginRequest, createIfNotExist);
 #pragma warning restore CA2000
 
-        Task pluginCallback = plugin.OnCreateGame(info);
+        // TODO: stash this in the GameManager along with the task, for later disposal
+        CancellationTokenSource cts = new(TimeSpan.FromMicroseconds(1));
 
-        if (pluginCallback.IsCompleted || info.HasResult())
+        Task pluginCallback = plugin.OnCreateGame(info, cts.Token);
+
+        if (pluginCallback.IsCompleted)
         {
-            // The plugin callback completed synchronously, or returned a result before suspending. Either way, we do
-            // not need to suspend the Luxon command.
+            // The plugin callback completed synchronously.
 
             Console.WriteLine("GamePluginOnCreateGame: Callback returned status synchronously");
+
+            return FinishCommand(info, request, managedRequest);
+        }
+
+        if (info.HasResult())
+        {
+            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We should
+            // keep an eye on the Task, otherwise all exceptions will be swallowed.
+
+            if (!gameManager.taskQueue.TryAdd(pluginCallback, null))
+            {
+                throw new InvalidOperationException("Failed to add to task queue");
+            }
 
             return FinishCommand(info, request, managedRequest);
         }
@@ -110,6 +125,8 @@ internal sealed class CSharpServerImports(
 
         _previousCallbackContext.Value = new(pluginCallback, info, managedRequest);
 
+        // TODO: Stash the info as well so that the main loop can check it and restart the command if it has been set
+        // TODO: but the task has suspended again
         if (!gameManager.taskQueue.TryAdd(pluginCallback, serverManager.TakeCommandRestarter()))
         {
             throw new InvalidOperationException("Failed to add to task queue");
@@ -149,6 +166,7 @@ internal sealed class CSharpServerImports(
         var result = info.Result.Value;
 
         info.Dispose();
+
         request.Replace(managedRequest);
 
         return result;

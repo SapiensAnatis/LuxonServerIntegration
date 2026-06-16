@@ -10,7 +10,8 @@ internal sealed class GameManager
 {
     private readonly Dictionary<nint, GameAdditionalFields> _additionalFields = [];
 
-    public ConcurrentDictionary<Task, CommandRestarter> taskQueue = new();
+    // TODO: Abstract this
+    public ConcurrentDictionary<Task, CommandRestarter?> taskQueue = new();
 
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {

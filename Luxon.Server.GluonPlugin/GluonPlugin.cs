@@ -1,4 +1,5 @@
-﻿using Luxon.Server.Plugin;
+﻿using System.Diagnostics;
+using Luxon.Server.Plugin;
 
 namespace Luxon.Server.GluonPlugin;
 
@@ -9,7 +10,7 @@ internal sealed class GluonPlugin : IGamePlugin
         Console.WriteLine("GluonPlugin: Constructor");
     }
 
-    public async Task OnCreateGame(ICreateGameCallInfo info)
+    public async Task OnCreateGame(ICreateGameCallInfo info, CancellationToken token)
     {
         Console.WriteLine("GluonPlugin: OnCreateGame");
 
@@ -22,6 +23,8 @@ internal sealed class GluonPlugin : IGamePlugin
         await Task.Delay(2000);
 
         info.Continue();
+
+        await Task.Delay(2000);
 
         Console.WriteLine("GluonPlugin: Done waiting");
     }
