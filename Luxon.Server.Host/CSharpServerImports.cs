@@ -42,6 +42,8 @@ internal sealed class CSharpServerImports(
     {
         if (_previousCallbackContext.Value is { } previousContext)
         {
+            _previousCallbackContext.Value = null;
+
             Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
 
             Debug.Assert(
@@ -49,20 +51,7 @@ internal sealed class CSharpServerImports(
                 "The processing loop should only invoke the restarter once PluginCallback.IsCompleted is true"
             );
 
-            if (!previousContext.Info.HasResult())
-            {
-                throw new InvalidOperationException(
-                    "Failed to set result before returning from plugin!"
-                );
-            }
-
-            request.Replace(previousContext.ManagedRequest);
-
-            var value = previousContext.Info.Result.Value;
-
-            _previousCallbackContext.Value = null;
-            previousContext.Info.Dispose();
-            return value;
+            return FinishCommand(previousContext.Info, request, previousContext.ManagedRequest);
         }
 
         if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
@@ -101,37 +90,19 @@ internal sealed class CSharpServerImports(
             Parameters = opr.Parameters,
         };
 
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
         CreateGameCallInfo info = new(pluginRequest, createIfNotExist);
+#pragma warning restore CA2000
 
         Task pluginCallback = plugin.OnCreateGame(info);
 
-        if (pluginCallback.IsCompleted)
+        if (pluginCallback.IsCompleted || info.HasResult())
         {
             // The plugin callback completed synchronously. Perform standard checks.
 
-            Console.WriteLine("GamePluginOnCreateGame: Callback returned synchronously");
+            Console.WriteLine("GamePluginOnCreateGame: Callback returned status synchronously");
 
-            if (!info.HasResult())
-            {
-                throw new InvalidOperationException(
-                    "Failed to set result before returning from plugin!"
-                );
-            }
-
-            goto HasResult;
-        }
-
-        // If we are here, the plugin callback has suspended due to the use of await.
-
-        if (info.HasResult())
-        {
-            // If the plugin callback set a result before awaiting, we can consume that without restarting the command.
-
-            Console.WriteLine(
-                "GamePluginOnCreateGame: Plugin suspended, but set result before doing so"
-            );
-
-            goto HasResult;
+            return FinishCommand(info, request, managedRequest);
         }
 
         Console.WriteLine("GamePluginOnCreateGame: Plugin suspended without setting result");
@@ -146,15 +117,6 @@ internal sealed class CSharpServerImports(
         Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
 
         return LuxonGamePluginResult.Continue;
-
-        HasResult:
-
-        // We cannot call InsertActorProperties at this stage as there is no GamePeer
-        request.Replace(managedRequest);
-
-        var infoValue = info.Result.Value;
-        info.Dispose();
-        return infoValue;
     }
 
     public LuxonGamePluginResult GamePluginOnCloseGame(
@@ -168,6 +130,27 @@ internal sealed class CSharpServerImports(
         gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
         return LuxonGamePluginResult.Continue;
+    }
+
+    private static LuxonGamePluginResult FinishCommand(
+        CallInfo info,
+        SerMessageRef request,
+        Message managedRequest
+    )
+    {
+        if (!info.HasResult())
+        {
+            throw new InvalidOperationException(
+                "Failed to set result before returning from plugin!"
+            );
+        }
+
+        var result = info.Result.Value;
+
+        info.Dispose();
+        request.Replace(managedRequest);
+
+        return result;
     }
 
     private record PreviousCallbackContext(
