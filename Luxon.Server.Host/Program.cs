@@ -48,6 +48,8 @@ while (serverManager.RunOnce())
 
         if (task.IsCompletedSuccessfully)
         {
+            // TODO: This logs twice even if there is only one callback being called...
+
             Console.WriteLine("[ServerHost] [debug] Plugin task completed successfully");
         }
         else

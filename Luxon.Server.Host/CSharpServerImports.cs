@@ -36,38 +36,7 @@ internal sealed class CSharpServerImports(
         if (gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
-
-            gameManager.CurrentCallbackContext.Value = null;
-
-            if (previousContext.CallInfo is null)
-            {
-                throw new InvalidOperationException(
-                    "A CommandRestarter was invoked, but context.CallInfo was null"
-                );
-            }
-
-            Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
-
-            var result = FinishCommand(
-                previousContext.CallInfo,
-                request,
-                previousContext.ManagedMessage
-            );
-
-            // If the plugin has set a result, but is now suspended again, set up Task monitoring.
-
-            if (!previousContext.PluginTask.IsCompleted)
-            {
-                previousContext
-                    .PluginTask.GetAwaiter()
-                    .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(previousContext));
-            }
-            else
-            {
-                previousContext.Dispose();
-            }
-
-            return result;
+            return HandleCommandRestart(previousContext, request);
         }
 
         if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
@@ -77,26 +46,15 @@ internal sealed class CSharpServerImports(
 
         Message managedRequest = request.ToManagedMessage();
 
-        if (
-            managedRequest.Payload is not OperationRequestMessage opr
-            || !opr.Parameters.TryGetValue(
-                (byte)Properties.ActorProperties,
-                out Value actorProperties
-            )
-        )
+        if (managedRequest.Payload is not OperationRequestMessage opr)
         {
-            throw new InvalidOperationException("Unexpected message type");
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
         }
 
-        if (
-            actorProperties
-            is not { TypeTag: 21, Content: IDictionary<Value, Value> actorPropertiesDictionary }
-        )
+        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? proxy))
         {
-            throw new InvalidOperationException("Unexpected actor properties type");
+            throw new InvalidOperationException("Failed to get actor properties");
         }
-
-        var proxy = new TypelessLuxonDictionaryProxy(actorPropertiesDictionary);
 
         JoinGameRequest pluginRequest = new()
         {
@@ -194,5 +152,70 @@ internal sealed class CSharpServerImports(
         request.Replace(managedRequest);
 
         return result;
+    }
+
+    private LuxonGamePluginResult HandleCommandRestart(
+        InfoCallbackContext previousContext,
+        SerMessageRef request
+    )
+    {
+        gameManager.CurrentCallbackContext.Value = null;
+
+        if (previousContext.CallInfo is null)
+        {
+            throw new InvalidOperationException(
+                "A CommandRestarter was invoked, but context.CallInfo was null"
+            );
+        }
+
+        Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
+
+        var result = FinishCommand(
+            previousContext.CallInfo,
+            request,
+            previousContext.ManagedMessage
+        );
+
+        // If the plugin has set a result, but is now suspended again, set up Task monitoring.
+
+        if (!previousContext.PluginTask.IsCompleted)
+        {
+            previousContext
+                .PluginTask.GetAwaiter()
+                .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(previousContext));
+        }
+        else
+        {
+            previousContext.Dispose();
+        }
+
+        return result;
+    }
+
+    private static bool TryGetActorProperties(
+        OperationRequestMessage opr,
+        [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
+    )
+    {
+        proxy = null;
+
+        if (
+            !opr.Parameters.TryGetValue((byte)Properties.ActorProperties, out Value actorProperties)
+        )
+        {
+            return false;
+        }
+
+        if (
+            actorProperties
+            is not { TypeTag: 21, Content: IDictionary<Value, Value> actorPropertiesDictionary }
+        )
+        {
+            return false;
+        }
+
+        proxy = new TypelessLuxonDictionaryProxy(actorPropertiesDictionary);
+
+        return true;
     }
 }
