@@ -8,19 +8,12 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host;
 
-[SuppressMessage(
-    "Design",
-    "CA1001:Types that own disposable fields should be disposable",
-    Justification = "Object lives for entire process lifetime"
-)]
 internal sealed class CSharpServerImports(
     ServerManager serverManager,
     PluginManager pluginManager,
     GameManager gameManager
 )
 {
-    private readonly ThreadLocal<PreviousCallbackContext?> _previousCallbackContext = new();
-
     public void GamePluginOnAttach(uint pluginId, Game game)
     {
         if (!pluginManager.TryCreatePlugin(pluginId, out IGamePlugin? plugin))
@@ -40,18 +33,41 @@ internal sealed class CSharpServerImports(
         bool createIfNotExist
     )
     {
-        if (_previousCallbackContext.Value is { } previousContext)
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
-            _previousCallbackContext.Value = null;
+            // The command has been restarted because a suspended command returned a plugin result.
+
+            gameManager.CurrentCallbackContext.Value = null;
+
+            if (previousContext.CallInfo is null)
+            {
+                throw new InvalidOperationException(
+                    "A CommandRestarter was invoked, but context.CallInfo was null"
+                );
+            }
 
             Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
 
-            Debug.Assert(
-                previousContext.PluginCallback.IsCompleted,
-                "The processing loop should only invoke the restarter once PluginCallback.IsCompleted is true"
+            var result = FinishCommand(
+                previousContext.CallInfo,
+                request,
+                previousContext.ManagedMessage
             );
 
-            return FinishCommand(previousContext.Info, request, previousContext.ManagedRequest);
+            // If the plugin has set a result, but is now suspended again, set up Task monitoring.
+
+            if (!previousContext.PluginTask.IsCompleted)
+            {
+                previousContext
+                    .PluginTask.GetAwaiter()
+                    .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(previousContext));
+            }
+            else
+            {
+                previousContext.Dispose();
+            }
+
+            return result;
         }
 
         if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
@@ -90,47 +106,57 @@ internal sealed class CSharpServerImports(
             Parameters = opr.Parameters,
         };
 
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
         CreateGameCallInfo info = new(pluginRequest, createIfNotExist);
-#pragma warning restore CA2000
 
-        // TODO: stash this in the GameManager along with the task, for later disposal
-        CancellationTokenSource cts = new(TimeSpan.FromMicroseconds(1));
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
 
         Task pluginCallback = plugin.OnCreateGame(info, cts.Token);
 
-        if (pluginCallback.IsCompleted)
+        if (pluginCallback.IsCompletedSuccessfully)
         {
             // The plugin callback completed synchronously.
 
-            Console.WriteLine("GamePluginOnCreateGame: Callback returned status synchronously");
+            Console.WriteLine("GamePluginOnCreateGame: Callback returned synchronously");
 
             return FinishCommand(info, request, managedRequest);
         }
 
         if (info.HasResult())
         {
-            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We should
-            // keep an eye on the Task, otherwise all exceptions will be swallowed.
+            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
+            // an eye on the Task via CompletedTaskQueue though, to ensure no exceptions are swallowed.
 
-            if (!gameManager.taskQueue.TryAdd(pluginCallback, null))
-            {
-                throw new InvalidOperationException("Failed to add to task queue");
-            }
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the main loop.
+            TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
+#pragma warning restore CA2000
+
+            pluginCallback
+                .GetAwaiter()
+                .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(ctx));
 
             return FinishCommand(info, request, managedRequest);
         }
 
         Console.WriteLine("GamePluginOnCreateGame: Plugin suspended without setting result");
 
-        _previousCallbackContext.Value = new(pluginCallback, info, managedRequest);
-
-        // TODO: Stash the info as well so that the main loop can check it and restart the command if it has been set
-        // TODO: but the task has suspended again
-        if (!gameManager.taskQueue.TryAdd(pluginCallback, serverManager.TakeCommandRestarter()))
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic at the top of the function.
+        InfoCallbackContext infoCtx = new()
         {
-            throw new InvalidOperationException("Failed to add to task queue");
-        }
+            PluginTask = pluginCallback,
+            CancellationTokenSource = cts,
+            CallInfo = info,
+            CommandRestarter = serverManager.TakeCommandRestarter(),
+            ManagedMessage = managedRequest,
+        };
+#pragma warning restore CA2000
+
+        pluginCallback
+            .GetAwaiter()
+            .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(infoCtx));
+
+        info.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(infoCtx));
 
         Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
 
@@ -165,16 +191,8 @@ internal sealed class CSharpServerImports(
 
         var result = info.Result.Value;
 
-        info.Dispose();
-
         request.Replace(managedRequest);
 
         return result;
     }
-
-    private record PreviousCallbackContext(
-        Task PluginCallback,
-        CallInfo Info,
-        Message ManagedRequest
-    );
 }

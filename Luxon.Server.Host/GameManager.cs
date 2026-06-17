@@ -10,8 +10,11 @@ internal sealed class GameManager
 {
     private readonly Dictionary<nint, GameAdditionalFields> _additionalFields = [];
 
-    // TODO: Abstract this
-    public ConcurrentDictionary<Task, CommandRestarter?> taskQueue = new();
+    public ConcurrentQueue<TaskContext> CompletedTaskQueue { get; } = new();
+
+    public ConcurrentQueue<InfoCallbackContext> CommandRestartQueue { get; } = new();
+
+    public ThreadLocal<InfoCallbackContext?> CurrentCallbackContext { get; } = new();
 
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {
@@ -47,15 +50,17 @@ internal sealed class GameManager
 
     public void RemovePlugin(nint gameHandle, uint pluginId)
     {
-        if (_additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields))
+        if (!_additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields))
         {
-            bool removed = fields.Plugins.Remove(pluginId);
-            Debug.Assert(removed);
+            return;
+        }
 
-            if (fields.Plugins.Count == 0)
-            {
-                _additionalFields.Remove(gameHandle);
-            }
+        bool removed = fields.Plugins.Remove(pluginId);
+        Debug.Assert(removed);
+
+        if (fields.Plugins.Count == 0)
+        {
+            _additionalFields.Remove(gameHandle);
         }
     }
 }

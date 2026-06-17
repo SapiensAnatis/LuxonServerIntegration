@@ -54,8 +54,8 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
 
     public void Add(object key, object? value)
     {
-        var luxonKey = new Value(GetTypeTag(key.GetType()), key);
-        var luxonValue = new Value(GetTypeTag(value.GetType()), value);
+        var luxonKey = new Value(GetTypeTag(key), key);
+        var luxonValue = new Value(GetTypeTag(value), value);
         _luxonDictionary.Add(luxonKey, luxonValue);
     }
 
@@ -78,15 +78,15 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
     {
         get
         {
-            var luxonKey = new Value(GetTypeTag(key.GetType()), key);
+            var luxonKey = new Value(GetTypeTag(key), key);
             var luxonValue = _luxonDictionary[luxonKey];
 
             return luxonValue.Content;
         }
         set
         {
-            Value luxonKey = new Value(GetTypeTag(key.GetType()), key);
-            Value luxonValue = new Value(GetTypeTag(value.GetType()), value);
+            Value luxonKey = new Value(GetTypeTag(key), key);
+            Value luxonValue = new Value(GetTypeTag(value), value);
 
             _luxonDictionary[luxonKey] = luxonValue;
         }
@@ -96,8 +96,15 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
 
     public ICollection<object?> Values => throw new NotImplementedException();
 
-    private static int GetTypeTag(Type type)
+    private static int GetTypeTag(object? value)
     {
+        if (value == null)
+        {
+            return 0;
+        }
+
+        Type type = value.GetType();
+
         if (type == typeof(int))
         {
             return 4;

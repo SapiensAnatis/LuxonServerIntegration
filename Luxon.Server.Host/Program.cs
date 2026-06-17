@@ -1,10 +1,10 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
 using Luxon.Server;
 using Luxon.Server.Host;
 
 if (Environment.GetEnvironmentVariable("LUXON_CUSTOM_LIB_PATH") is { } customLibPath)
 {
-    Console.WriteLine($"[ServerManager] [debug] Using custom lib path: {customLibPath}");
+    Console.WriteLine($"[ServerHost] [debug] Using custom lib path: {customLibPath}");
     LuxonNativeLibrary.SetCustomLibraryPath(customLibPath);
 }
 
@@ -37,32 +37,55 @@ LuxonServerRuntime.UnhandledCallbackException += OnUnhandledPluginException;
 
 while (serverManager.RunOnce())
 {
-    foreach (var task in gameManager.taskQueue.Keys)
+    if (gameManager.CompletedTaskQueue.TryDequeue(out var taskContext))
     {
-        if (!task.IsCompleted)
-        {
-            continue;
-        }
-#pragma warning disable CA2000 // Dispose objects before losing scope. Restart() destroys the native object, thus an explicit dispose would be a double-free.
-        if (!gameManager.taskQueue.TryRemove(task, out CommandRestarter? restarter))
-#pragma warning restore CA2000
-        {
-            Console.WriteLine("[ServerManager] [warning] Failed to remove task from pool");
-        }
+        var task = taskContext.PluginTask;
+
+        Debug.Assert(
+            task.IsCompleted,
+            "The only thing that adds to CompletedTaskQueue is the OnCompleted callback of task awaiters"
+        );
 
         if (task.IsCompletedSuccessfully)
         {
-            restarter?.Restart();
+            Console.WriteLine("[ServerHost] [debug] Plugin task completed successfully");
         }
-        else if (task.IsCanceled)
+        else
         {
-            // TODO: Wire this up to return LuxonPluginResult.Cancelled if we have a restarter, somehow?
-            OnPluginCallbackCancelled();
+            if (task.IsCanceled)
+            {
+                Console.WriteLine("[ServerHost] [warning] Plugin task was cancelled");
+            }
+            else if (task.IsFaulted)
+            {
+                OnUnhandledPluginException(task.Exception);
+            }
+
+            if (taskContext is InfoCallbackContext infoContext && !infoContext.CallInfo.HasResult())
+            {
+                // If the task was cancelled or failed before setting a result, then set an error and restart the command.
+                // This will enqueue it in CommandRestartQueue.
+#if DEBUG
+                int oldLength = gameManager.CommandRestartQueue.Count;
+#endif
+                infoContext.CallInfo.Fail();
+
+#if DEBUG
+                Debug.Assert(
+                    gameManager.CommandRestartQueue.Count == oldLength + 1,
+                    "Calling Fail should add the info to the queue"
+                );
+#endif
+            }
         }
-        else if (task.IsFaulted)
-        {
-            OnUnhandledPluginException(task.Exception);
-        }
+
+        taskContext.Dispose();
+    }
+
+    if (gameManager.CommandRestartQueue.TryDequeue(out var commandContext))
+    {
+        gameManager.CurrentCallbackContext.Value = commandContext;
+        commandContext.CommandRestarter.Restart();
     }
 }
 
@@ -76,9 +99,4 @@ static void OnUnhandledPluginException(Exception exception)
     Console.WriteLine(
         $"[ServerHost] [error] Unhandled exception inside plugin callback: {displayException}"
     );
-}
-
-static void OnPluginCallbackCancelled()
-{
-    Console.WriteLine("[ServerHost] [warning] Plugin callback was cancelled");
 }

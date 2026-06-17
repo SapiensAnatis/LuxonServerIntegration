@@ -20,11 +20,11 @@ internal sealed class GluonPlugin : IGamePlugin
 
         info.Request.ActorProperties.Add("ViewerId", playerId);
 
-        await Task.Delay(2000);
+        await Task.Delay(1000, token);
 
         info.Continue();
 
-        await Task.Delay(2000);
+        await Task.Delay(1000, token);
 
         Console.WriteLine("GluonPlugin: Done waiting");
     }

@@ -5,10 +5,9 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal abstract class CallInfo : ICallInfo, IDisposable
+internal abstract class CallInfo : ICallInfo
 {
-    private bool _disposed;
-    private readonly ManualResetEventSlim _resultSetEvent = new();
+    private Action? _onResultSet;
 
     public IOperationRequest OperationRequest => throw new NotImplementedException();
 
@@ -24,44 +23,26 @@ internal abstract class CallInfo : ICallInfo, IDisposable
         SetResult(LuxonGamePluginResult.Fail);
     }
 
-    [MemberNotNull(nameof(Result))]
-    public void WaitForResult()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
-        if (Result == null && !_resultSetEvent.Wait(TimeSpan.FromSeconds(3)))
-        {
-            throw new TimeoutException("Plugin did not set result in time");
-        }
-
-        if (Result == null)
-        {
-            throw new UnreachableException("Result not set but _resultSetEvent was set");
-        }
-    }
-
     [MemberNotNullWhen(true, nameof(Result))]
     public bool HasResult()
     {
-        return _resultSetEvent.IsSet && Result != null;
+        return Result != null;
     }
 
-    public void Dispose()
+    public void OnResultSet(Action onResultSet)
     {
-        _disposed = true;
-        _resultSetEvent.Dispose();
+        _onResultSet = onResultSet;
     }
 
     private void SetResult(LuxonGamePluginResult result)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-
         if (Result != null)
         {
             throw new InvalidOperationException("The operation result is already set.");
         }
 
         Result = result;
-        _resultSetEvent.Set();
+
+        _onResultSet?.Invoke();
     }
 }
