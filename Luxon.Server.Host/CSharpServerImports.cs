@@ -176,15 +176,10 @@ internal sealed class CSharpServerImports(
             previousContext.ManagedMessage
         );
 
-        // If the plugin has set a result, but is now suspended again, set up Task monitoring.
+        // If the plugin has set a result, but is now suspended again, it will be monitored by the task queue; we added it when we originally added it to the info queue.
+        // Do not dispose in this case.
 
-        if (!previousContext.PluginTask.IsCompleted)
-        {
-            previousContext
-                .PluginTask.GetAwaiter()
-                .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(previousContext));
-        }
-        else
+        if (previousContext.PluginTask.IsCompleted)
         {
             previousContext.Dispose();
         }
