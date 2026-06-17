@@ -90,9 +90,7 @@ internal sealed class CSharpServerImports(
             TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
 #pragma warning restore CA2000
 
-            pluginCallback
-                .GetAwaiter()
-                .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(ctx));
+            SetupTaskCallbacks(ctx);
 
             return FinishCommand(info, request, managedRequest);
         }
@@ -110,11 +108,7 @@ internal sealed class CSharpServerImports(
         };
 #pragma warning restore CA2000
 
-        pluginCallback
-            .GetAwaiter()
-            .OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(infoCtx));
-
-        info.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(infoCtx));
+        SetupInfoCallbacks(infoCtx);
 
         Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
 
@@ -185,6 +179,18 @@ internal sealed class CSharpServerImports(
         }
 
         return result;
+    }
+
+    private void SetupTaskCallbacks(TaskContext ctx)
+    {
+        ctx.PluginTask.GetAwaiter().OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(ctx));
+    }
+
+    private void SetupInfoCallbacks(InfoCallbackContext ctx)
+    {
+        SetupTaskCallbacks(ctx);
+
+        ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
     }
 
     private static bool TryGetActorProperties(
