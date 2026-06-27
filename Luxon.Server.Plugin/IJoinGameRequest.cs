@@ -13,10 +13,5 @@ public interface IJoinGameRequest : IOperationRequest
     [Obsolete("Not implemented yet")]
     int EmptyRoomLiveTime { get; set; }
 
-    [Experimental("LUX0001", Message = "Not yet implemented")]
-    IDictionary<object, object?> GameProperties
-    {
-        get => throw new NotImplementedException();
-        set => throw new NotImplementedException();
-    }
+    IDictionary<object, object?> GameProperties { get; }
 }

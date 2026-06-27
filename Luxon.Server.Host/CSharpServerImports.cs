@@ -51,15 +51,24 @@ internal sealed class CSharpServerImports(
             throw new InvalidOperationException("Failed to get OperationRequestMessage");
         }
 
-        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? proxy))
+        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? actorProperties))
         {
             throw new InvalidOperationException("Failed to get actor properties");
         }
 
+        if (!TryGetGameProperties(opr, out TypelessLuxonDictionaryProxy? gameProperties))
+        {
+            throw new InvalidOperationException("Failed to get game properties");
+        }
+
         JoinGameRequest pluginRequest = new()
         {
-            ActorProperties = proxy,
+            ActorProperties = actorProperties,
+            GameProperties = gameProperties,
+
+            // TODO: this is not true for all games
             ActorNr = 1,
+
             OperationCode = opr.OperationCode,
             Parameters = opr.Parameters,
         };
@@ -206,7 +215,7 @@ internal sealed class CSharpServerImports(
         [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
     )
     {
-        return TryGetHashtable(opr, (byte)Properties.ActorProperties, out proxy);
+        return TryGetHashtable(opr, (byte)Properties.GameProperties, out proxy);
     }
 
     private static bool TryGetHashtable(

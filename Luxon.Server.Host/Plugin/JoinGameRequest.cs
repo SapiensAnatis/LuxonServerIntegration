@@ -12,4 +12,8 @@ internal sealed class JoinGameRequest : IJoinGameRequest
     public required int ActorNr { get; init; }
 
     public required IDictionary<object, object?> ActorProperties { get; init; }
+
+    public int EmptyRoomLiveTime { get; set; }
+
+    public required IDictionary<object, object?> GameProperties { get; init; }
 }
