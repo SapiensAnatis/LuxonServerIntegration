@@ -16,7 +16,7 @@ internal sealed class CSharpServerImports(
 {
     public void GamePluginOnAttach(uint pluginId, Game game)
     {
-        if (!pluginManager.TryCreatePlugin(pluginId, out IGamePlugin? plugin))
+        if (!pluginManager.TryCreatePlugin(pluginId, game, out IGamePlugin? plugin))
         {
             throw new InvalidOperationException($"Failed to create plugin with ID {pluginId}");
         }

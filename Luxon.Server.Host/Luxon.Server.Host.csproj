@@ -5,6 +5,7 @@
 
   <ItemGroup>
     <PackageReference Include="Luxon.Server" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="SharpYaml" />
   </ItemGroup>
 

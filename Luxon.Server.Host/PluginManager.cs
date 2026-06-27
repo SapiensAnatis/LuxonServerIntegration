@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using Luxon.Server.Host.Plugin;
 using Luxon.Server.Plugin;
 using SharpYaml;
 
@@ -57,13 +58,18 @@ internal sealed class PluginManager
 
             uint id = LuxonServerRuntime.RegisterGamePlugin(plugin.Name);
 
-            Debug.Assert(id != 0);
+            if (id == 0)
+            {
+                throw new InvalidOperationException(
+                    "Native Luxon method rejected plugin registration"
+                );
+            }
 
             this.pluginIdToPluginMap.Add(id, new PluginDetails(plugin.Name, factory, loadContext));
         }
     }
 
-    public bool TryCreatePlugin(uint id, [NotNullWhen(true)] out IGamePlugin? plugin)
+    public bool TryCreatePlugin(uint id, Game game, [NotNullWhen(true)] out IGamePlugin? plugin)
     {
         plugin = null;
         if (!this.pluginIdToPluginMap.TryGetValue(id, out PluginDetails? pluginDetails))
@@ -71,7 +77,9 @@ internal sealed class PluginManager
             return false;
         }
 
-        plugin = pluginDetails.Factory.Create(null, pluginDetails.Name, null);
+        PluginHost host = new() { GameId = game.Id };
+
+        plugin = pluginDetails.Factory.Create(host, pluginDetails.Name, null);
         return true;
     }
 
