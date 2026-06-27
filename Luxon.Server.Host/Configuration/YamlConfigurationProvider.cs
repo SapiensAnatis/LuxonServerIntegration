@@ -27,7 +27,7 @@ internal sealed class YamlConfigurationProvider(string filePath) : Configuration
 
     private static void Visit(
         YamlNode? node,
-        List<string> context,
+        List<string> pathSegments,
         IDictionary<string, string?> data
     )
     {
@@ -42,9 +42,9 @@ internal sealed class YamlConfigurationProvider(string filePath) : Configuration
                         throw new InvalidOperationException("Mapping key was not a scalar");
                     }
 
-                    context.Add(scalar.Value);
-                    Visit(value, context, data);
-                    context.Pop();
+                    pathSegments.Add(scalar.Value);
+                    Visit(value, pathSegments, data);
+                    pathSegments.Pop();
                 }
 
                 break;
@@ -53,16 +53,22 @@ internal sealed class YamlConfigurationProvider(string filePath) : Configuration
             {
                 for (int i = 0; i < sequence.Count; i++)
                 {
-                    context.Add(i.ToString(CultureInfo.InvariantCulture));
-                    Visit(sequence[i], context, data);
-                    context.Pop();
+                    pathSegments.Add(i.ToString(CultureInfo.InvariantCulture));
+                    Visit(sequence[i], pathSegments, data);
+                    pathSegments.Pop();
                 }
 
                 break;
             }
+            case null:
+            {
+                var path = ConfigurationPath.Combine(pathSegments);
+                data.Add(path, null);
+                break;
+            }
             case YamlValue scalar:
             {
-                var path = ConfigurationPath.Combine(context);
+                var path = ConfigurationPath.Combine(pathSegments);
                 data.Add(path, scalar.Value);
                 break;
             }
