@@ -76,7 +76,6 @@ internal sealed partial class GameLogicPlugin : PluginBase
             this.roomState.IsSoloPlay = true;
         }
 
-        // C0 is in parameters[7] = 248
         this.roomState.QuestId = info.Request.GameProperties.GetInt(GamePropertyKeys.QuestId);
         this.roomState.IsRandomMatching = QuestHelper.GetIsRandomMatching(this.roomState.QuestId);
         MatchingTypes matchingType = (MatchingTypes)
@@ -86,6 +85,62 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
         this.pluginStateService.IsPubliclyVisible =
             matchingType == MatchingTypes.Anyone && !this.roomState.IsRandomMatching;
+    }
+
+    public override async Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken)
+    {
+        int currentActorCount = this.PluginHost.GameActors.Count(x => x.ActorNr != info.ActorNr);
+
+        if (currentActorCount >= 4)
+        {
+            this.LogRejectingJoinRequestGameFull(currentActorCount);
+
+            info.Fail();
+            return;
+        }
+
+        if (this.goToIngameStateManager.MinGoToIngameState > 0)
+        {
+            this.LogRejectingJoinGameAlreadyInProgress();
+
+            info.Fail();
+            return;
+        }
+
+        // ReSharper disable once SimplifyLinqExpressionUseAll
+        if (!this.PluginHost.GameActors.Any(x => x.ActorNr == 1))
+        {
+            this.LogRejectingJoinGameHasNoHost();
+
+            info.Fail();
+            return;
+        }
+
+        info.Request.ActorProperties.InitializeViewerId();
+        info.Continue();
+
+        this.actorState[info.ActorNr] = new ActorState();
+
+        long viewerId = info.Request.ActorProperties.GetLong(ActorPropertyKeys.PlayerId);
+
+        this.LogPlayerJoined(viewerId, this.PluginHost.GameId);
+
+        if (this.roomState.IsRandomMatching && this.roomState.RandomMatchingStartTimer == null)
+        {
+            // this.LogCommencingRandomMatchingStartTimerForGameGameid(this.PluginHost.GameId);
+            //
+            // this.roomState.RandomMatchingStartTimer = this.PluginHost.CreateOneTimeTimer(
+            //     info,
+            //     () =>
+            //     {
+            //         this.LogExecutingRandomMatchingStartForGameGameid(this.PluginHost.GameId);
+            //         this.goToIngameStateManager.SetGoToIngameInfo();
+            //     },
+            //     this.configuration.RandomMatchingStartDelayMs
+            // );
+
+            throw new NotImplementedException("Random matching is not implemented yet");
+        }
     }
 
 #pragma warning disable CA5394 // Do not use insecure randomness. This value is not security-sensitive.

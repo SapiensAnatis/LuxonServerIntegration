@@ -1,5 +1,5 @@
 using Luxon.Ser;
-using LuxonServer.Plugin;
+using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 

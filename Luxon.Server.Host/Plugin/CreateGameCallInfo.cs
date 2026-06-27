@@ -1,13 +1,10 @@
 using Luxon.Server.Plugin;
-using LuxonServer.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal sealed class CreateGameCallInfo(IJoinGameRequest request, bool createIfNotExists)
-    : CallInfo,
-        ICreateGameCallInfo
+internal sealed class CreateGameCallInfo : CallInfo, ICreateGameCallInfo
 {
-    public IJoinGameRequest Request { get; } = request;
+    public required IJoinGameRequest Request { get; init; }
 
-    public bool CreateIfNotExists { get; set; } = createIfNotExists;
+    public bool CreateIfNotExists { get; init; }
 }

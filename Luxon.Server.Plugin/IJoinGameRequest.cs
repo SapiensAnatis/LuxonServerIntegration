@@ -1,8 +1,6 @@
-using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using Luxon.Ser;
 
-namespace LuxonServer.Plugin;
+namespace Luxon.Server.Plugin;
 
 public interface IJoinGameRequest : IOperationRequest
 {

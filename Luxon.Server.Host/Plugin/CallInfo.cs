@@ -9,7 +9,7 @@ internal abstract class CallInfo : ICallInfo
 {
     private Action? onResultSet;
 
-    public IOperationRequest OperationRequest => throw new NotImplementedException();
+    public required IOperationRequest OperationRequest { get; init; }
 
     public LuxonGamePluginResult? Result { get; private set; }
 

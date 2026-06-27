@@ -44,6 +44,15 @@ internal sealed class CSharpServerImports(
             throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
         }
 
+        // TODO: this is not true for all games
+        const int firstActorNr = 1;
+
+        if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
+        {
+            Console.WriteLine("GamePluginOnCreateGame: Updating PluginHost.GameActors");
+            concretePluginHost.GameActorsInternal.Add(new Actor() { ActorNr = firstActorNr });
+        }
+
         Message managedRequest = request.ToManagedMessage();
 
         if (managedRequest.Payload is not OperationRequestMessage opr)
@@ -63,17 +72,21 @@ internal sealed class CSharpServerImports(
 
         JoinGameRequest pluginRequest = new()
         {
+            ActorNr = firstActorNr,
+
             ActorProperties = actorProperties,
             GameProperties = gameProperties,
-
-            // TODO: this is not true for all games
-            ActorNr = 1,
 
             OperationCode = opr.OperationCode,
             Parameters = opr.Parameters,
         };
 
-        CreateGameCallInfo info = new(pluginRequest, createIfNotExist);
+        CreateGameCallInfo info = new()
+        {
+            Request = pluginRequest,
+            CreateIfNotExists = createIfNotExist,
+            OperationRequest = opr,
+        };
 
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
         CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
@@ -120,6 +133,110 @@ internal sealed class CSharpServerImports(
         this.SetupInfoCallbacks(infoCtx);
 
         Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
+
+        return LuxonGamePluginResult.Continue;
+    }
+
+    public LuxonGamePluginResult GamePluginOnJoinGame(
+        uint pluginId,
+        Game game,
+        SerMessageRef request,
+        GamePeer joiner
+    )
+    {
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, request);
+        }
+
+        if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
+        {
+            throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
+        }
+
+        if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
+        {
+            Console.WriteLine("GamePluginOnJoinGame: Updating PluginHost.GameActors");
+            concretePluginHost.GameActorsInternal.Add(new Actor() { ActorNr = joiner.ActorId });
+        }
+
+        Message managedRequest = request.ToManagedMessage();
+
+        if (managedRequest.Payload is not OperationRequestMessage opr)
+        {
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
+        }
+
+        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? actorProperties))
+        {
+            throw new InvalidOperationException("Failed to get actor properties");
+        }
+
+        if (!TryGetGameProperties(opr, out TypelessLuxonDictionaryProxy? gameProperties))
+        {
+            throw new InvalidOperationException("Failed to get game properties");
+        }
+
+        JoinGameCallInfo info = new()
+        {
+            Request = new JoinGameRequest()
+            {
+                ActorProperties = actorProperties,
+                GameProperties = gameProperties,
+                ActorNr = joiner.ActorId,
+                OperationCode = opr.OperationCode,
+                Parameters = opr.Parameters,
+            },
+            ActorNr = joiner.ActorId,
+            OperationRequest = opr,
+        };
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        Task pluginCallback = plugin.OnJoin(info, cts.Token);
+
+        if (pluginCallback.IsCompletedSuccessfully)
+        {
+            // The plugin callback completed synchronously.
+
+            Console.WriteLine("GamePluginOnJoinGame: Callback returned synchronously");
+
+            return FinishCommand(info, request, managedRequest);
+        }
+
+        if (info.HasResult())
+        {
+            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
+            // an eye on the Task via CompletedTaskQueue though, to ensure no exceptions are swallowed.
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the main loop.
+            TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
+#pragma warning restore CA2000
+
+            this.SetupTaskCallbacks(ctx);
+
+            return FinishCommand(info, request, managedRequest);
+        }
+
+        Console.WriteLine("GamePluginOnJoinGame: Plugin suspended without setting result");
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic at the top of the function.
+        InfoCallbackContext infoCtx = new()
+        {
+            PluginTask = pluginCallback,
+            CancellationTokenSource = cts,
+            CallInfo = info,
+            CommandRestarter = serverManager.TakeCommandRestarter(),
+            ManagedMessage = managedRequest,
+        };
+#pragma warning restore CA2000
+
+        this.SetupInfoCallbacks(infoCtx);
+
+        Console.WriteLine("GamePluginOnJoinGame: Added task to queue, returning Continue");
 
         return LuxonGamePluginResult.Continue;
     }

@@ -4,7 +4,9 @@ namespace Luxon.Server.Plugin;
 
 public interface IPluginHost
 {
-    public string GameId { get; }
+    string GameId { get; }
 
-    public ILogger<T> CreateLogger<T>();
+    ILogger<T> CreateLogger<T>();
+
+    public IReadOnlyList<IActor> GameActors { get; }
 }

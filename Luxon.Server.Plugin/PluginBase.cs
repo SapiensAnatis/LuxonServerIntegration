@@ -9,18 +9,22 @@ public abstract class PluginBase : IGamePlugin
         this.PluginHost = host;
     }
 
-    protected IPluginHost PluginHost { get; set; }
+    public IPluginHost PluginHost { get; private set; }
 
-    public virtual Task OnCreateGame(ICreateGameCallInfo info, CancellationToken cancellationToken)
+    public virtual async Task OnCreateGame(
+        ICreateGameCallInfo info,
+        CancellationToken cancellationToken
+    )
     {
 #pragma warning disable CA1062
         info.Continue();
 #pragma warning restore CA1062
-
-        return Task.CompletedTask;
     }
 
-    public virtual void BeforeJoinGame() { }
-
-    public virtual void OnJoinGame() { }
+    public virtual async Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken)
+    {
+#pragma warning disable CA1062
+        info.Continue();
+#pragma warning restore CA1062
+    }
 }

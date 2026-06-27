@@ -1,5 +1,3 @@
-using LuxonServer.Plugin;
-
 namespace Luxon.Server.Plugin;
 
 public interface ICreateGameCallInfo : ITypedCallInfo<IJoinGameRequest>

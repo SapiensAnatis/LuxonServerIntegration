@@ -4,9 +4,7 @@ namespace Luxon.Server.Plugin;
 
 public interface IGamePlugin
 {
-    public Task OnCreateGame(ICreateGameCallInfo info, CancellationToken cancellationToken);
+    Task OnCreateGame(ICreateGameCallInfo info, CancellationToken cancellationToken);
 
-    public void BeforeJoinGame();
-
-    public void OnJoinGame();
+    Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken);
 }
