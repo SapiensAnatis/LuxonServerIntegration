@@ -1,4 +1,4 @@
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Shared.Constants;
 
 /// <summary>
 /// Game property keys.

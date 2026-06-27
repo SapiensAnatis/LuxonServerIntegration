@@ -1,6 +1,6 @@
 using DragaliaAPI.Photon.Shared.Models;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 public class HeroParamState
 {
@@ -11,9 +11,9 @@ public class HeroParamState
 
     public HeroParamData Data { get; }
 
-    public int ActorNr => Data.ActorNr;
+    public int ActorNr => this.Data.ActorNr;
 
-    public int HeroParamCount => Data.HeroParamLists.FirstOrDefault()?.Count ?? 0;
+    public int HeroParamCount => this.Data.HeroParamLists.FirstOrDefault()?.Count ?? 0;
 
     public int UsedMemberCount { get; set; }
 }

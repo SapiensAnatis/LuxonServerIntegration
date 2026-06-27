@@ -1,9 +1,10 @@
 using System.Text.Json;
+using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 using MessagePack;
 using Microsoft.Extensions.Logging;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 internal sealed class GoToIngameStateManager
 {

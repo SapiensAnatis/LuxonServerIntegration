@@ -1,4 +1,4 @@
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Shared;
 
 /// <summary>
 /// Shared instance for mutable state to be exchanged between sub-plugins.

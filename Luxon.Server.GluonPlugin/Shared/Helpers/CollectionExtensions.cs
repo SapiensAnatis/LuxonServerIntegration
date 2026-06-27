@@ -1,7 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
+using Luxon.Server.GluonPlugin.Shared.Constants;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Shared.Helpers;
 
 internal static class CollectionExtensions
 {

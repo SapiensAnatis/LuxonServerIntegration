@@ -1,13 +1,12 @@
-﻿using System.Diagnostics;
+﻿using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
-using Microsoft.Extensions.Configuration;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.Gluon;
 
 internal sealed class GluonPlugin(
     IPluginHost host,
     PluginStateService pluginStateService,
-    GameLogicPlugin gameLogicPlugin
+    GameLogic.GameLogicPlugin gameLogicPlugin
 ) : PluginBase(host)
 {
     public override async Task OnCreateGame(

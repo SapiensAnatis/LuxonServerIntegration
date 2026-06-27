@@ -1,8 +1,11 @@
 using DragaliaAPI.Photon.Shared.Enums;
+using Luxon.Server.GluonPlugin.Shared;
+using Luxon.Server.GluonPlugin.Shared.Constants;
+using Luxon.Server.GluonPlugin.Shared.Helpers;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Logging;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 internal sealed partial class GameLogicPlugin : PluginBase
 {

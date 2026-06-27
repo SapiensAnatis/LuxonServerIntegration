@@ -1,7 +1,8 @@
+using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.Gluon;
 
 public class GluonPluginFactory : IPluginFactory
 {
@@ -24,7 +25,7 @@ public class GluonPluginFactory : IPluginFactory
 
         Console.WriteLine("GluonPluginFactory: ApiServerUrl=" + configuration.ApiServerUrl);
 
-        var gameLogicPlugin = new GameLogicPlugin(gameHost, configuration, stateService);
+        var gameLogicPlugin = new GameLogic.GameLogicPlugin(gameHost, configuration, stateService);
 
         return new GluonPlugin(gameHost, stateService, gameLogicPlugin);
     }

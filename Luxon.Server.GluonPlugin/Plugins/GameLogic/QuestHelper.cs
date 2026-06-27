@@ -1,4 +1,4 @@
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 internal static partial class QuestHelper
 {

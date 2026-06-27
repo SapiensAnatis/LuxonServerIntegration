@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 
-namespace Luxon.Server.GluonPlugin;
+namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 internal sealed partial class GameLogicPlugin
 {
