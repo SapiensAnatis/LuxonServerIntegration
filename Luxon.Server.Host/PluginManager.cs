@@ -35,7 +35,7 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
             if (pluginType is null)
             {
                 throw new InvalidOperationException(
-                    $"Failed to load type {plugin.Type} from assembly {plugin.AssemblyName}: not found"
+                    $"Failed to load type {plugin.Type} from assembly {plugin.AssemblyName}: type not found"
                 );
             }
 
