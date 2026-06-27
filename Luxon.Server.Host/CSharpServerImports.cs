@@ -226,14 +226,12 @@ internal sealed class CSharpServerImports(
     {
         proxy = null;
 
-        if (
-            !opr.Parameters.TryGetValue((byte)Properties.ActorProperties, out Value actorProperties)
-        )
+        if (!opr.Parameters.TryGetValue(key, out Value hashtableValue))
         {
             return false;
         }
 
-        if (actorProperties is not { TypeTag: 21, Content: IDictionary<Value, Value> hashtable })
+        if (hashtableValue is not { TypeTag: 21, Content: IDictionary<Value, Value> hashtable })
         {
             return false;
         }
