@@ -18,6 +18,7 @@ using var config = ServerManagerConfig.Create();
 config
     .AddServerAndEndpoint(LuxonServerType.MasterServer, 5055, "192.168.0.65:5055")
     .AddServerAndEndpoint(LuxonServerType.GameServer, 5056, "192.168.0.65:5056");
+
 using var serverManager = ServerManager.CreateFromConfig(config);
 
 var csImports = new CSharpServerImports(serverManager, pluginManager, gameManager);

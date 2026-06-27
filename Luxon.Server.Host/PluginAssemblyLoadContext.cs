@@ -11,19 +11,19 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
         "../../../../Luxon.Server.GluonPlugin/bin/Debug/net10.0/"
     );
 
-    private readonly string _pluginPath;
-    private readonly AssemblyDependencyResolver _resolver;
+    private readonly string pluginPath;
+    private readonly AssemblyDependencyResolver resolver;
 
     public PluginAssemblyLoadContext(PluginConfig config)
         : base(name: $"PluginLoadContext_{config.Name}", isCollectible: false)
     {
-        _pluginPath = Path.Join(PluginsBasePath, config.AssemblyName);
-        _resolver = new AssemblyDependencyResolver(_pluginPath);
+        this.pluginPath = Path.Join(PluginsBasePath, config.AssemblyName);
+        this.resolver = new AssemblyDependencyResolver(this.pluginPath);
     }
 
     public Assembly LoadPlugin()
     {
-        return this.LoadFromAssemblyPath(_pluginPath);
+        return this.LoadFromAssemblyPath(this.pluginPath);
     }
 
     protected override Assembly? Load(AssemblyName name)
@@ -36,14 +36,14 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
             return null;
         }
 
-        string? path = _resolver.ResolveAssemblyToPath(name);
+        string? path = this.resolver.ResolveAssemblyToPath(name);
 
         if (path == null)
         {
             return null;
         }
 
-        return LoadFromAssemblyPath(path);
+        return this.LoadFromAssemblyPath(path);
     }
 
     protected override IntPtr LoadUnmanagedDll(string name)

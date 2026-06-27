@@ -11,7 +11,7 @@ internal class TaskContext : IDisposable
 
     public virtual void Dispose()
     {
-        CancellationTokenSource.Dispose();
+        this.CancellationTokenSource.Dispose();
     }
 }
 

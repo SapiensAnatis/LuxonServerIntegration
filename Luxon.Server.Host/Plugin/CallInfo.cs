@@ -7,7 +7,7 @@ namespace Luxon.Server.Host.Plugin;
 
 internal abstract class CallInfo : ICallInfo
 {
-    private Action? _onResultSet;
+    private Action? onResultSet;
 
     public IOperationRequest OperationRequest => throw new NotImplementedException();
 
@@ -15,34 +15,36 @@ internal abstract class CallInfo : ICallInfo
 
     public void Continue()
     {
-        SetResult(LuxonGamePluginResult.Continue);
+        this.SetResult(LuxonGamePluginResult.Continue);
     }
 
     public void Fail(string? msg = null, Dictionary<byte, object>? parameters = null)
     {
-        SetResult(LuxonGamePluginResult.Fail);
+        this.SetResult(LuxonGamePluginResult.Fail);
     }
 
     [MemberNotNullWhen(true, nameof(Result))]
     public bool HasResult()
     {
-        return Result != null;
+        return this.Result != null;
     }
+
+    public bool IsProcessed => this.HasResult();
 
     public void OnResultSet(Action onResultSet)
     {
-        _onResultSet = onResultSet;
+        this.onResultSet = onResultSet;
     }
 
     private void SetResult(LuxonGamePluginResult result)
     {
-        if (Result != null)
+        if (this.Result != null)
         {
             throw new InvalidOperationException("The operation result is already set.");
         }
 
-        Result = result;
+        this.Result = result;
 
-        _onResultSet?.Invoke();
+        this.onResultSet?.Invoke();
     }
 }

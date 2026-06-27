@@ -8,7 +8,7 @@ namespace Luxon.Server.Host;
 
 internal sealed class GameManager
 {
-    private readonly Dictionary<nint, GameAdditionalFields> _additionalFields = [];
+    private readonly Dictionary<nint, GameAdditionalFields> additionalFields = [];
 
     public ConcurrentQueue<TaskContext> CompletedTaskQueue { get; } = new();
 
@@ -19,7 +19,7 @@ internal sealed class GameManager
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {
         ref var gameAdditionalFields = ref CollectionsMarshal.GetValueRefOrAddDefault(
-            _additionalFields,
+            this.additionalFields,
             gameHandle,
             out bool exists
         );
@@ -44,13 +44,13 @@ internal sealed class GameManager
     {
         pluginInstance = null;
 
-        return _additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields)
+        return this.additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields)
             && fields.Plugins.TryGetValue(pluginId, out pluginInstance);
     }
 
     public void RemovePlugin(nint gameHandle, uint pluginId)
     {
-        if (!_additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields))
+        if (!this.additionalFields.TryGetValue(gameHandle, out GameAdditionalFields? fields))
         {
             return;
         }
@@ -60,7 +60,7 @@ internal sealed class GameManager
 
         if (fields.Plugins.Count == 0)
         {
-            _additionalFields.Remove(gameHandle);
+            this.additionalFields.Remove(gameHandle);
         }
     }
 }

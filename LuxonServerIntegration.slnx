@@ -9,6 +9,7 @@
   <Folder Name="/Solution Items/docs/">
     <File Path="docs\API-changes.md" />
   </Folder>
+  <Project Path="DragaliaAPI.Photon.Shared/DragaliaAPI.Photon.Shared.csproj" />
   <Project Path="Luxon.Server.GluonPlugin/Luxon.Server.GluonPlugin.csproj" />
   <Project Path="Luxon.Server.Host/Luxon.Server.Host.csproj" />
   <Project Path="Luxon.Server.Plugin/Luxon.Server.Plugin.csproj" />

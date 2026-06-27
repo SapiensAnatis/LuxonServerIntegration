@@ -1,41 +1,117 @@
 ﻿using System.Diagnostics;
 using Luxon.Server.Plugin;
+using Microsoft.Extensions.Configuration;
 
 namespace Luxon.Server.GluonPlugin;
 
-internal sealed class GluonPlugin : IGamePlugin
+internal sealed class GluonPlugin(
+    IPluginHost host,
+    PluginStateService pluginStateService,
+    GameLogicPlugin gameLogicPlugin
+) : PluginBase(host)
 {
-    public GluonPlugin()
+    public override async Task OnCreateGame(
+        ICreateGameCallInfo info,
+        CancellationToken cancellationToken
+    )
     {
-        Console.WriteLine("GluonPlugin: Constructor");
+        await gameLogicPlugin.OnCreateGame(info, cancellationToken);
+        // this.stateManagerPlugin.OnCreateGame(info);
+        //
+        // if (pluginStateService.IsPubliclyVisible)
+        // {
+        //     this.discordPlugin?.OnCreateGame(info);
+        // }
+        //
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
     }
 
-    public async Task OnCreateGame(ICreateGameCallInfo info, CancellationToken token)
-    {
-        Console.WriteLine("GluonPlugin: OnCreateGame");
+    // public override void OnJoin(IJoinGameCallInfo info)
+    // {
+    //     gameLogicPlugin.OnJoin(info);
+    //     // this.stateManagerPlugin.OnJoin(info);
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 
-        object? playerId = info.Request.ActorProperties["PlayerId"];
+    // public override void OnLeave(ILeaveGameCallInfo info)
+    // {
+    //     gameLogicPlugin.OnLeave(info);
+    //     // this.stateManagerPlugin.OnLeave(info);
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         base.OnLeave(info);
+    //     }
+    // }
 
-        Console.WriteLine($"PlayerId: {playerId}");
+    // public override void BeforeCloseGame(IBeforeCloseGameCallInfo info)
+    // {
+    //     // This can't use OnCloseGame with StateManagerPlugin, as there can only be one synchronous outbound HTTP request
+    //     // per event handler. (Unless we chain them together using callbacks...)
+    //
+    //     if (pluginStateService.IsPubliclyVisible)
+    //     {
+    //         // this.discordPlugin?.BeforeCloseGame(info);
+    //     }
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 
-        info.Request.ActorProperties.Add("ViewerId", playerId);
+    // public override void OnCloseGame(ICloseGameCallInfo info)
+    // {
+    //     // GameLogicPlugin has no override for closing a game
+    //     // this.stateManagerPlugin.OnCloseGame(info);
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 
-        await Task.Delay(1000, token);
+    // public override void OnRaiseEvent(IRaiseEventCallInfo info)
+    // {
+    //     gameLogicPlugin.OnRaiseEvent(info);
+    //     // this.stateManagerPlugin.OnRaiseEvent(info);
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 
-        info.Continue();
+    // public override void BeforeSetProperties(IBeforeSetPropertiesCallInfo info)
+    // {
+    //     gameLogicPlugin.BeforeSetProperties(info);
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 
-        await Task.Delay(1000, token);
-
-        Console.WriteLine("GluonPlugin: Done waiting");
-    }
-
-    public void BeforeJoinGame()
-    {
-        Console.WriteLine("GluonPlugin: BeforeJoinGame");
-    }
-
-    public void OnJoinGame()
-    {
-        Console.WriteLine("GluonPlugin: OnJoinGame");
-    }
+    // public override void OnSetProperties(ISetPropertiesCallInfo info)
+    // {
+    //     gameLogicPlugin.OnSetProperties(info);
+    //     // this.stateManagerPlugin.OnSetProperties(info);
+    //
+    //     if (pluginStateService.IsPubliclyVisible)
+    //     {
+    //         // this.discordPlugin?.OnSetProperties(info);
+    //     }
+    //
+    //     if (!info.IsProcessed)
+    //     {
+    //         info.Continue();
+    //     }
+    // }
 }

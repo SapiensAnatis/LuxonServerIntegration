@@ -8,7 +8,7 @@ namespace Luxon.Server.Host;
 
 internal sealed class PluginManager
 {
-    private readonly Dictionary<uint, PluginDetails> _pluginIdToPluginMap = [];
+    private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap = [];
 
     public void LoadPluginsFromConfig(string pluginConfigPath)
     {
@@ -59,14 +59,14 @@ internal sealed class PluginManager
 
             Debug.Assert(id != 0);
 
-            _pluginIdToPluginMap.Add(id, new PluginDetails(plugin.Name, factory, loadContext));
+            this.pluginIdToPluginMap.Add(id, new PluginDetails(plugin.Name, factory, loadContext));
         }
     }
 
     public bool TryCreatePlugin(uint id, [NotNullWhen(true)] out IGamePlugin? plugin)
     {
         plugin = null;
-        if (!_pluginIdToPluginMap.TryGetValue(id, out PluginDetails? pluginDetails))
+        if (!this.pluginIdToPluginMap.TryGetValue(id, out PluginDetails? pluginDetails))
         {
             return false;
         }

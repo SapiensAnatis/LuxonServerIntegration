@@ -36,7 +36,7 @@ internal sealed class CSharpServerImports(
         if (gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
-            return HandleCommandRestart(previousContext, request);
+            return this.HandleCommandRestart(previousContext, request);
         }
 
         if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
@@ -90,7 +90,7 @@ internal sealed class CSharpServerImports(
             TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
 #pragma warning restore CA2000
 
-            SetupTaskCallbacks(ctx);
+            this.SetupTaskCallbacks(ctx);
 
             return FinishCommand(info, request, managedRequest);
         }
@@ -108,7 +108,7 @@ internal sealed class CSharpServerImports(
         };
 #pragma warning restore CA2000
 
-        SetupInfoCallbacks(infoCtx);
+        this.SetupInfoCallbacks(infoCtx);
 
         Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
 
@@ -188,7 +188,7 @@ internal sealed class CSharpServerImports(
 
     private void SetupInfoCallbacks(InfoCallbackContext ctx)
     {
-        SetupTaskCallbacks(ctx);
+        this.SetupTaskCallbacks(ctx);
 
         ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
     }
@@ -196,6 +196,23 @@ internal sealed class CSharpServerImports(
     private static bool TryGetActorProperties(
         OperationRequestMessage opr,
         [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
+    )
+    {
+        return TryGetHashtable(opr, (byte)Properties.ActorProperties, out proxy);
+    }
+
+    private static bool TryGetGameProperties(
+        OperationRequestMessage opr,
+        [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
+    )
+    {
+        return TryGetHashtable(opr, (byte)Properties.ActorProperties, out proxy);
+    }
+
+    private static bool TryGetHashtable(
+        OperationRequestMessage opr,
+        byte key,
+        out TypelessLuxonDictionaryProxy? proxy
     )
     {
         proxy = null;
@@ -207,15 +224,12 @@ internal sealed class CSharpServerImports(
             return false;
         }
 
-        if (
-            actorProperties
-            is not { TypeTag: 21, Content: IDictionary<Value, Value> actorPropertiesDictionary }
-        )
+        if (actorProperties is not { TypeTag: 21, Content: IDictionary<Value, Value> hashtable })
         {
             return false;
         }
 
-        proxy = new TypelessLuxonDictionaryProxy(actorPropertiesDictionary);
+        proxy = new TypelessLuxonDictionaryProxy(hashtable);
 
         return true;
     }

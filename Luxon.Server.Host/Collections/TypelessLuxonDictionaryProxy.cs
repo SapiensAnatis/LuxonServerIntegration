@@ -4,23 +4,18 @@ using Luxon.Ser;
 
 namespace Luxon.Server.Host.Collections;
 
-internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?>
+internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> luxonDictionary)
+    : IDictionary<object, object?>
 {
-    private readonly IDictionary<Value, Value> _luxonDictionary;
-
-    public TypelessLuxonDictionaryProxy(IDictionary<Value, Value> luxonDictionary)
-    {
-        _luxonDictionary = luxonDictionary;
-    }
-
     public IEnumerator<KeyValuePair<object, object?>> GetEnumerator()
     {
         throw new NotImplementedException();
     }
 
+    [Experimental("LUX0001", Message = "Not yet implemented")]
     IEnumerator IEnumerable.GetEnumerator()
     {
-        return GetEnumerator();
+        return this.GetEnumerator();
     }
 
     public void Add(KeyValuePair<object, object?> item)
@@ -56,7 +51,7 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
     {
         var luxonKey = new Value(GetTypeTag(key), key);
         var luxonValue = new Value(GetTypeTag(value), value);
-        _luxonDictionary.Add(luxonKey, luxonValue);
+        luxonDictionary.Add(luxonKey, luxonValue);
     }
 
     public bool ContainsKey(object key)
@@ -79,7 +74,7 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
         get
         {
             var luxonKey = new Value(GetTypeTag(key), key);
-            var luxonValue = _luxonDictionary[luxonKey];
+            var luxonValue = luxonDictionary[luxonKey];
 
             return luxonValue.Content;
         }
@@ -88,7 +83,7 @@ internal sealed class TypelessLuxonDictionaryProxy : IDictionary<object, object?
             Value luxonKey = new Value(GetTypeTag(key), key);
             Value luxonValue = new Value(GetTypeTag(value), value);
 
-            _luxonDictionary[luxonKey] = luxonValue;
+            luxonDictionary[luxonKey] = luxonValue;
         }
     }
 
