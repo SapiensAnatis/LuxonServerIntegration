@@ -14,18 +14,15 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
 
     public void LoadPluginsFromConfig()
     {
-        var sect = pluginConfiguration.GetRequiredSection("Plugins");
-        var children = sect.GetChildren().ToList();
+        var config = pluginConfiguration.Get<PluginConfigList>();
 
-        for (int i = 0; i < children.Count; i++)
+        if (config is not { Plugins: { Count: > 0 } plugins })
         {
-            var child = children[i];
-            var plugin =
-                child.Get<PluginConfig>()
-                ?? throw new InvalidOperationException("Failed to parse plugin config!");
+            return;
+        }
 
-            IConfiguration individualPluginConfig = child.GetSection("Configuration");
-
+        foreach (var plugin in plugins)
+        {
             var loadContext = new PluginAssemblyLoadContext(plugin);
 
             Assembly pluginAssembly = loadContext.LoadPlugin();
@@ -66,7 +63,7 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
 
             this.pluginIdToPluginMap.Add(
                 id,
-                new PluginDetails(plugin.Name, factory, loadContext, individualPluginConfig)
+                new PluginDetails(plugin.Name, factory, loadContext, plugin.Configuration)
             );
         }
     }

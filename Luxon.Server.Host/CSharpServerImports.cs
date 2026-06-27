@@ -39,19 +39,7 @@ internal sealed class CSharpServerImports(
             return this.HandleCommandRestart(previousContext, request);
         }
 
-        if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
-        {
-            throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
-        }
-
-        // TODO: this is not true for all games
-        const int firstActorNr = 1;
-
-        if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
-        {
-            Console.WriteLine("GamePluginOnCreateGame: Updating PluginHost.GameActors");
-            concretePluginHost.GameActorsInternal.Add(new Actor() { ActorNr = firstActorNr });
-        }
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         Message managedRequest = request.ToManagedMessage();
 
@@ -60,30 +48,12 @@ internal sealed class CSharpServerImports(
             throw new InvalidOperationException("Failed to get OperationRequestMessage");
         }
 
-        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? actorProperties))
-        {
-            throw new InvalidOperationException("Failed to get actor properties");
-        }
-
-        if (!TryGetGameProperties(opr, out TypelessLuxonDictionaryProxy? gameProperties))
-        {
-            throw new InvalidOperationException("Failed to get game properties");
-        }
-
-        JoinGameRequest pluginRequest = new()
-        {
-            ActorNr = firstActorNr,
-
-            ActorProperties = actorProperties,
-            GameProperties = gameProperties,
-
-            OperationCode = opr.OperationCode,
-            Parameters = opr.Parameters,
-        };
+        // TODO: this is not true for all games
+        const int firstActorNr = 1;
 
         CreateGameCallInfo info = new()
         {
-            Request = pluginRequest,
+            Request = CreateJoinGameRequest(opr, firstActorNr),
             CreateIfNotExists = createIfNotExist,
             OperationRequest = opr,
         };
@@ -94,47 +64,7 @@ internal sealed class CSharpServerImports(
 
         Task pluginCallback = plugin.OnCreateGame(info, cts.Token);
 
-        if (pluginCallback.IsCompletedSuccessfully)
-        {
-            // The plugin callback completed synchronously.
-
-            Console.WriteLine("GamePluginOnCreateGame: Callback returned synchronously");
-
-            return FinishCommand(info, request, managedRequest);
-        }
-
-        if (info.HasResult())
-        {
-            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
-            // an eye on the Task via CompletedTaskQueue though, to ensure no exceptions are swallowed.
-
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the main loop.
-            TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
-#pragma warning restore CA2000
-
-            this.SetupTaskCallbacks(ctx);
-
-            return FinishCommand(info, request, managedRequest);
-        }
-
-        Console.WriteLine("GamePluginOnCreateGame: Plugin suspended without setting result");
-
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic at the top of the function.
-        InfoCallbackContext infoCtx = new()
-        {
-            PluginTask = pluginCallback,
-            CancellationTokenSource = cts,
-            CallInfo = info,
-            CommandRestarter = serverManager.TakeCommandRestarter(),
-            ManagedMessage = managedRequest,
-        };
-#pragma warning restore CA2000
-
-        this.SetupInfoCallbacks(infoCtx);
-
-        Console.WriteLine("GamePluginOnCreateGame: Added task to queue, returning Continue");
-
-        return LuxonGamePluginResult.Continue;
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
 
     public LuxonGamePluginResult GamePluginOnJoinGame(
@@ -150,10 +80,7 @@ internal sealed class CSharpServerImports(
             return this.HandleCommandRestart(previousContext, request);
         }
 
-        if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
-        {
-            throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
-        }
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
         {
@@ -168,26 +95,9 @@ internal sealed class CSharpServerImports(
             throw new InvalidOperationException("Failed to get OperationRequestMessage");
         }
 
-        if (!TryGetActorProperties(opr, out TypelessLuxonDictionaryProxy? actorProperties))
-        {
-            throw new InvalidOperationException("Failed to get actor properties");
-        }
-
-        if (!TryGetGameProperties(opr, out TypelessLuxonDictionaryProxy? gameProperties))
-        {
-            throw new InvalidOperationException("Failed to get game properties");
-        }
-
         JoinGameCallInfo info = new()
         {
-            Request = new JoinGameRequest()
-            {
-                ActorProperties = actorProperties,
-                GameProperties = gameProperties,
-                ActorNr = joiner.ActorId,
-                OperationCode = opr.OperationCode,
-                Parameters = opr.Parameters,
-            },
+            Request = CreateJoinGameRequest(opr, joiner.ActorId),
             ActorNr = joiner.ActorId,
             OperationRequest = opr,
         };
@@ -198,47 +108,7 @@ internal sealed class CSharpServerImports(
 
         Task pluginCallback = plugin.OnJoin(info, cts.Token);
 
-        if (pluginCallback.IsCompletedSuccessfully)
-        {
-            // The plugin callback completed synchronously.
-
-            Console.WriteLine("GamePluginOnJoinGame: Callback returned synchronously");
-
-            return FinishCommand(info, request, managedRequest);
-        }
-
-        if (info.HasResult())
-        {
-            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
-            // an eye on the Task via CompletedTaskQueue though, to ensure no exceptions are swallowed.
-
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the main loop.
-            TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
-#pragma warning restore CA2000
-
-            this.SetupTaskCallbacks(ctx);
-
-            return FinishCommand(info, request, managedRequest);
-        }
-
-        Console.WriteLine("GamePluginOnJoinGame: Plugin suspended without setting result");
-
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic at the top of the function.
-        InfoCallbackContext infoCtx = new()
-        {
-            PluginTask = pluginCallback,
-            CancellationTokenSource = cts,
-            CallInfo = info,
-            CommandRestarter = serverManager.TakeCommandRestarter(),
-            ManagedMessage = managedRequest,
-        };
-#pragma warning restore CA2000
-
-        this.SetupInfoCallbacks(infoCtx);
-
-        Console.WriteLine("GamePluginOnJoinGame: Added task to queue, returning Continue");
-
-        return LuxonGamePluginResult.Continue;
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
 
     public LuxonGamePluginResult GamePluginOnCloseGame(
@@ -307,6 +177,57 @@ internal sealed class CSharpServerImports(
         return result;
     }
 
+    private LuxonGamePluginResult HandlePluginTaskResult(
+        Task pluginCallback,
+        CallInfo info,
+        SerMessageRef request,
+        Message managedRequest,
+        CancellationTokenSource cts
+    )
+    {
+        if (pluginCallback.IsCompletedSuccessfully)
+        {
+            // The plugin callback completed synchronously.
+
+            Console.WriteLine("CSharpServerImports: Callback returned synchronously");
+
+            return FinishCommand(info, request, managedRequest);
+        }
+
+        if (info.HasResult())
+        {
+            // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
+            // an eye on the Task via CompletedTaskQueue though, to ensure no exceptions are swallowed.
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the main loop.
+            TaskContext ctx = new() { PluginTask = pluginCallback, CancellationTokenSource = cts };
+#pragma warning restore CA2000
+
+            this.SetupTaskCallbacks(ctx);
+
+            return FinishCommand(info, request, managedRequest);
+        }
+
+        Console.WriteLine("CSharpServerImports: Plugin suspended without setting result");
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic.
+        InfoCallbackContext infoCtx = new()
+        {
+            PluginTask = pluginCallback,
+            CancellationTokenSource = cts,
+            CallInfo = info,
+            CommandRestarter = serverManager.TakeCommandRestarter(),
+            ManagedMessage = managedRequest,
+        };
+#pragma warning restore CA2000
+
+        this.SetupInfoCallbacks(infoCtx);
+
+        Console.WriteLine("CSharpServerImports: Added task to queue, returning Continue");
+
+        return LuxonGamePluginResult.Continue;
+    }
+
     private void SetupTaskCallbacks(TaskContext ctx)
     {
         ctx.PluginTask.GetAwaiter().OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(ctx));
@@ -319,31 +240,59 @@ internal sealed class CSharpServerImports(
         ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
     }
 
-    private static bool TryGetActorProperties(
-        OperationRequestMessage opr,
-        [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
-    )
+    private IGamePlugin GetPlugin(Game game, uint pluginId)
     {
-        return TryGetHashtable(opr, (byte)Properties.ActorProperties, out proxy);
+        if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
+        {
+            throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
+        }
+
+        return plugin;
     }
 
-    private static bool TryGetGameProperties(
-        OperationRequestMessage opr,
-        [NotNullWhen(true)] out TypelessLuxonDictionaryProxy? proxy
-    )
+    private static JoinGameRequest CreateJoinGameRequest(OperationRequestMessage msg, int actorNr)
     {
-        return TryGetHashtable(opr, (byte)Properties.GameProperties, out proxy);
+        if (
+            !TryGetHashtable(
+                msg,
+                Properties.ActorProperties,
+                out TypelessLuxonDictionaryProxy? actorProperties
+            )
+        )
+        {
+            throw new InvalidOperationException("Failed to get actor properties");
+        }
+
+        if (
+            !TryGetHashtable(
+                msg,
+                Properties.GameProperties,
+                out TypelessLuxonDictionaryProxy? gameProperties
+            )
+        )
+        {
+            throw new InvalidOperationException("Failed to get game properties");
+        }
+
+        return new JoinGameRequest()
+        {
+            ActorProperties = actorProperties,
+            GameProperties = gameProperties,
+            ActorNr = actorNr,
+            OperationCode = msg.OperationCode,
+            Parameters = msg.Parameters,
+        };
     }
 
     private static bool TryGetHashtable(
         OperationRequestMessage opr,
-        byte key,
-        out TypelessLuxonDictionaryProxy? proxy
+        Properties key,
+        [MaybeNullWhen(false)] out TypelessLuxonDictionaryProxy proxy
     )
     {
         proxy = null;
 
-        if (!opr.Parameters.TryGetValue(key, out Value hashtableValue))
+        if (!opr.Parameters.TryGetValue((byte)key, out Value hashtableValue))
         {
             return false;
         }
