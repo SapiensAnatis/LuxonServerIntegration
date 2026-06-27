@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using Luxon.Server;
 using Luxon.Server.Host;
+using Luxon.Server.Host.Configuration;
+using Microsoft.Extensions.Configuration;
 
 if (Environment.GetEnvironmentVariable("LUXON_CUSTOM_LIB_PATH") is { } customLibPath)
 {
@@ -8,8 +10,14 @@ if (Environment.GetEnvironmentVariable("LUXON_CUSTOM_LIB_PATH") is { } customLib
     LuxonNativeLibrary.SetCustomLibraryPath(customLibPath);
 }
 
-var pluginManager = new PluginManager();
-pluginManager.LoadPluginsFromConfig(Path.Join(AppContext.BaseDirectory, "plugin.yml"));
+string pluginPath = Path.Join(AppContext.BaseDirectory, "plugin.yml");
+
+IConfigurationRoot configuration = new ConfigurationBuilder()
+    .Add(new YamlConfigurationSource(pluginPath))
+    .Build();
+
+var pluginManager = new PluginManager(configuration);
+pluginManager.LoadPluginsFromConfig();
 
 var gameManager = new GameManager();
 

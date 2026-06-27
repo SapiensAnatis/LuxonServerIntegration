@@ -73,6 +73,7 @@ internal sealed partial class GameLogicPlugin : PluginBase
             this.roomState.IsSoloPlay = true;
         }
 
+        // C0 is in parameters[7] = 248
         this.roomState.QuestId = info.Request.GameProperties.GetInt(GamePropertyKeys.QuestId);
         this.roomState.IsRandomMatching = QuestHelper.GetIsRandomMatching(this.roomState.QuestId);
         MatchingTypes matchingType = (MatchingTypes)

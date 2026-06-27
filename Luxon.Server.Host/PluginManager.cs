@@ -3,30 +3,29 @@ using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using Luxon.Server.Host.Plugin;
 using Luxon.Server.Plugin;
+using Microsoft.Extensions.Configuration;
 using SharpYaml;
 
 namespace Luxon.Server.Host;
 
-internal sealed class PluginManager
+internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
 {
     private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap = [];
 
-    public void LoadPluginsFromConfig(string pluginConfigPath)
+    public void LoadPluginsFromConfig()
     {
-        List<PluginConfig>? plugins;
+        var sect = pluginConfiguration.GetRequiredSection("Plugins");
+        var children = sect.GetChildren().ToList();
 
-        using (FileStream fs = File.OpenRead(pluginConfigPath))
+        for (int i = 0; i < children.Count; i++)
         {
-            plugins = YamlSerializer.Deserialize<List<PluginConfig>>(fs);
-        }
+            var child = children[i];
+            var plugin =
+                child.Get<PluginConfig>()
+                ?? throw new InvalidOperationException("Failed to parse plugin config!");
 
-        if (plugins is not { Count: > 0 })
-        {
-            return;
-        }
+            IConfiguration individualPluginConfig = child.GetSection("Configuration");
 
-        foreach (var plugin in plugins)
-        {
             var loadContext = new PluginAssemblyLoadContext(plugin);
 
             Assembly pluginAssembly = loadContext.LoadPlugin();
@@ -65,7 +64,10 @@ internal sealed class PluginManager
                 );
             }
 
-            this.pluginIdToPluginMap.Add(id, new PluginDetails(plugin.Name, factory, loadContext));
+            this.pluginIdToPluginMap.Add(
+                id,
+                new PluginDetails(plugin.Name, factory, loadContext, individualPluginConfig)
+            );
         }
     }
 
@@ -79,13 +81,19 @@ internal sealed class PluginManager
 
         PluginHost host = new() { GameId = game.Id };
 
-        plugin = pluginDetails.Factory.Create(host, pluginDetails.Name, null);
+        plugin = pluginDetails.Factory.Create(
+            host,
+            pluginDetails.Name,
+            pluginDetails.Configuration
+        );
+
         return true;
     }
 
     private sealed record PluginDetails(
         string Name,
         IPluginFactory Factory,
-        PluginAssemblyLoadContext AssemblyLoadContext
+        PluginAssemblyLoadContext AssemblyLoadContext,
+        IConfiguration Configuration
     );
 }

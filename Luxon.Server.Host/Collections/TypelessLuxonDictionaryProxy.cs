@@ -56,7 +56,7 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
 
     public bool ContainsKey(object key)
     {
-        throw new NotImplementedException();
+        return luxonDictionary.ContainsKey(new Value(GetTypeTag(key), key));
     }
 
     public bool Remove(object key)
@@ -64,9 +64,17 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
         throw new NotImplementedException();
     }
 
-    public bool TryGetValue(object key, [MaybeNullWhen(false)] out object? value)
+    public bool TryGetValue(object key, out object? value)
     {
-        throw new NotImplementedException();
+        var luxonKey = new Value(GetTypeTag(key), key);
+        if (luxonDictionary.TryGetValue(luxonKey, out var luxonValue))
+        {
+            value = luxonValue.Content;
+            return true;
+        }
+
+        value = null;
+        return false;
     }
 
     public object? this[object key]
@@ -80,8 +88,8 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
         }
         set
         {
-            Value luxonKey = new Value(GetTypeTag(key), key);
-            Value luxonValue = new Value(GetTypeTag(value), value);
+            var luxonKey = new Value(GetTypeTag(key), key);
+            var luxonValue = new Value(GetTypeTag(value), value);
 
             luxonDictionary[luxonKey] = luxonValue;
         }

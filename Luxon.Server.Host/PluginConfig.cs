@@ -8,6 +8,7 @@ namespace Luxon.Server.Host;
     "CA1812:AvoidUninstantiatedInternalClasses",
     Justification = "Class is instantiated from YamlSerializer"
 )]
+// ReSharper disable once ClassNeverInstantiated.Global
 internal sealed class PluginConfig
 {
     [YamlRequired]

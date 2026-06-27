@@ -1,0 +1,86 @@
+using System.Globalization;
+using System.Text.Json;
+using Luxon.Ser;
+using Microsoft.Extensions.Configuration;
+using SharpYaml;
+using SharpYaml.Events;
+using SharpYaml.Model;
+using SharpYaml.Serialization;
+
+namespace Luxon.Server.Host.Configuration;
+
+internal sealed class YamlConfigurationProvider(string filePath) : ConfigurationProvider
+{
+    public override void Load()
+    {
+        using var fs = File.OpenRead(filePath);
+        using var sr = new StreamReader(fs);
+
+        var stream = YamlStream.Load(sr);
+        if (stream is not [{ } yamlDocument])
+        {
+            throw new InvalidOperationException("Expected to receive a single YamlDocument");
+        }
+
+        Visit(yamlDocument.Contents, new List<string>(), this.Data);
+    }
+
+    private static void Visit(
+        YamlNode? node,
+        List<string> context,
+        IDictionary<string, string?> data
+    )
+    {
+        switch (node)
+        {
+            case YamlMapping map:
+            {
+                foreach ((YamlElement key, YamlElement? value) in map)
+                {
+                    if (key is not YamlValue scalar)
+                    {
+                        throw new InvalidOperationException("Mapping key was not a scalar");
+                    }
+
+                    context.Add(scalar.Value);
+                    Visit(value, context, data);
+                    context.Pop();
+                }
+
+                break;
+            }
+            case YamlSequence sequence:
+            {
+                for (int i = 0; i < sequence.Count; i++)
+                {
+                    context.Add(i.ToString(CultureInfo.InvariantCulture));
+                    Visit(sequence[i], context, data);
+                    context.Pop();
+                }
+
+                break;
+            }
+            case YamlValue scalar:
+            {
+                var path = ConfigurationPath.Combine(context);
+                data.Add(path, scalar.Value);
+                break;
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Extensions to make a List behave more like a stack. We don't use Stack directly because it needs to be
+/// reversed before calling ConfigurationPath.Combine.
+/// </summary>
+internal static class ListStackExtensions
+{
+    extension<T>(List<T> list)
+    {
+        public void Pop()
+        {
+            list.RemoveAt(list.Count - 1);
+        }
+    }
+}
