@@ -7,12 +7,48 @@ namespace Luxon.Server.Host.Collections;
 internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> luxonDictionary)
     : IDictionary<object, object?>
 {
-    public IEnumerator<KeyValuePair<object, object?>> GetEnumerator()
+    struct Enumerator(IEnumerator<KeyValuePair<Value, Value>> luxonEnumerator)
+        : IEnumerator<KeyValuePair<object, object?>>
     {
-        throw new NotImplementedException();
+        private KeyValuePair<object, object?>? current = null;
+
+        public bool MoveNext()
+        {
+            if (!luxonEnumerator.MoveNext())
+            {
+                return false;
+            }
+
+            this.current = new KeyValuePair<object, object?>(
+                luxonEnumerator.Current.Key.Content,
+                luxonEnumerator.Current.Value.Content
+            );
+            return true;
+        }
+
+        public void Reset()
+        {
+            luxonEnumerator.Reset();
+        }
+
+        KeyValuePair<object, object?> IEnumerator<KeyValuePair<object, object?>>.Current
+        {
+            get => this.current ?? throw new InvalidOperationException("Must call MoveNext first");
+        }
+
+        object? IEnumerator.Current => ((IEnumerator<KeyValuePair<object, object?>>)this).Current;
+
+        public void Dispose()
+        {
+            luxonEnumerator.Dispose();
+        }
     }
 
-    [Experimental("LUX0001", Message = "Not yet implemented")]
+    public IEnumerator<KeyValuePair<object, object?>> GetEnumerator()
+    {
+        return new Enumerator(luxonDictionary.GetEnumerator());
+    }
+
     IEnumerator IEnumerable.GetEnumerator()
     {
         return this.GetEnumerator();

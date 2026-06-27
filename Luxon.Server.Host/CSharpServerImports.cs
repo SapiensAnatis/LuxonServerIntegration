@@ -5,15 +5,19 @@ using Luxon.Server.Host.Collections;
 using Luxon.Server.Host.Enums.DictKeyCodes;
 using Luxon.Server.Host.Plugin;
 using Luxon.Server.Plugin;
+using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.Host;
 
-internal sealed class CSharpServerImports(
+internal sealed partial class CSharpServerImports(
     ServerManager serverManager,
     PluginManager pluginManager,
     GameManager gameManager
 )
 {
+    private ILogger<CSharpServerImports> logger =
+        LoggerConfiguration.Factory.CreateLogger<CSharpServerImports>();
+
     public void GamePluginOnAttach(uint pluginId, Game game)
     {
         if (!pluginManager.TryCreatePlugin(pluginId, game, out IGamePlugin? plugin))
@@ -74,6 +78,8 @@ internal sealed class CSharpServerImports(
         GamePeer joiner
     )
     {
+        this.LogJoinGameCalled();
+
         if (gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
@@ -84,7 +90,7 @@ internal sealed class CSharpServerImports(
 
         if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
         {
-            Console.WriteLine("GamePluginOnJoinGame: Updating PluginHost.GameActors");
+            this.LogUpdatingGameActors(joiner.ActorId);
             concretePluginHost.GameActorsInternal.Add(new Actor() { ActorNr = joiner.ActorId });
         }
 
@@ -158,7 +164,7 @@ internal sealed class CSharpServerImports(
             );
         }
 
-        Console.WriteLine("GamePluginOnCreateGame: Detected previous context");
+        this.DetectedPreviousContext();
 
         var result = FinishCommand(
             previousContext.CallInfo,
@@ -189,7 +195,7 @@ internal sealed class CSharpServerImports(
         {
             // The plugin callback completed synchronously.
 
-            Console.WriteLine("CSharpServerImports: Callback returned synchronously");
+            this.LogPluginCallbackReturnedSynchronously();
 
             return FinishCommand(info, request, managedRequest);
         }
@@ -208,7 +214,10 @@ internal sealed class CSharpServerImports(
             return FinishCommand(info, request, managedRequest);
         }
 
-        Console.WriteLine("CSharpServerImports: Plugin suspended without setting result");
+        this.LogPluginSuspendedWithoutSettingResult();
+
+        // This will suspend the active command until we call Restart on it
+        CommandRestarter commandRestarter = serverManager.TakeCommandRestarter();
 
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic.
         InfoCallbackContext infoCtx = new()
@@ -216,14 +225,14 @@ internal sealed class CSharpServerImports(
             PluginTask = pluginCallback,
             CancellationTokenSource = cts,
             CallInfo = info,
-            CommandRestarter = serverManager.TakeCommandRestarter(),
+            CommandRestarter = commandRestarter,
             ManagedMessage = managedRequest,
         };
 #pragma warning restore CA2000
 
         this.SetupInfoCallbacks(infoCtx);
 
-        Console.WriteLine("CSharpServerImports: Added task to queue, returning Continue");
+        this.LogSuspendedCommand();
 
         return LuxonGamePluginResult.Continue;
     }
@@ -306,4 +315,25 @@ internal sealed class CSharpServerImports(
 
         return true;
     }
+
+    [LoggerMessage(LogLevel.Debug, "GamePluginOnJoinGame called")]
+    partial void LogJoinGameCalled();
+
+    [LoggerMessage(LogLevel.Debug, "Updating GameActors with actor number {ActorNr}")]
+    partial void LogUpdatingGameActors(int actorNr);
+
+    [LoggerMessage(LogLevel.Debug, "Detected previous command context")]
+    partial void DetectedPreviousContext();
+
+    [LoggerMessage(LogLevel.Debug, "Plugin callback returned synchronously")]
+    partial void LogPluginCallbackReturnedSynchronously();
+
+    [LoggerMessage(LogLevel.Debug, "Plugin suspended without setting result")]
+    partial void LogPluginSuspendedWithoutSettingResult();
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Suspended command and set up callbacks - returning Continue"
+    )]
+    partial void LogSuspendedCommand();
 }

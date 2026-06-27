@@ -1,10 +1,11 @@
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.GluonPlugin.Plugins.Gluon;
 
-public class GluonPluginFactory : IPluginFactory
+public partial class GluonPluginFactory : IPluginFactory
 {
     public GluonPluginFactory()
     {
@@ -15,18 +16,26 @@ public class GluonPluginFactory : IPluginFactory
     {
         ArgumentNullException.ThrowIfNull(gameHost);
 
-        Console.WriteLine("GluonPluginFactory: Create");
-
         var stateService = new PluginStateService();
 
         var configuration =
             config.Get<PluginConfiguration>()
             ?? throw new InvalidOperationException("Failed to get configuration");
 
-        Console.WriteLine("GluonPluginFactory: ApiServerUrl=" + configuration.ApiServerUrl);
+        var logger = gameHost.CreateLogger<GluonPluginFactory>();
+        LogCreatingNewGluonPluginWithUrl(logger, configuration.ApiServerUrl);
 
         var gameLogicPlugin = new GameLogic.GameLogicPlugin(gameHost, configuration, stateService);
 
         return new GluonPlugin(gameHost, stateService, gameLogicPlugin);
     }
+
+    [LoggerMessage(
+        LogLevel.Debug,
+        "Creating new GluonPlugin instance with ApiServerUrl = {ApiServerUrl}"
+    )]
+    static partial void LogCreatingNewGluonPluginWithUrl(
+        ILogger<GluonPluginFactory> logger,
+        Uri apiServerUrl
+    );
 }

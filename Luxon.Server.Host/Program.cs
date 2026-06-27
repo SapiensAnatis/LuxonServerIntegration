@@ -3,10 +3,13 @@ using Luxon.Server;
 using Luxon.Server.Host;
 using Luxon.Server.Host.Configuration;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+
+ILogger<Program> logger = LoggerConfiguration.Factory.CreateLogger<Program>();
 
 if (Environment.GetEnvironmentVariable("LUXON_CUSTOM_LIB_PATH") is { } customLibPath)
 {
-    Console.WriteLine($"[ServerHost] [debug] Using custom lib path: {customLibPath}");
+    LogUsingCustomLibPath(logger, customLibPath);
     LuxonNativeLibrary.SetCustomLibraryPath(customLibPath);
 }
 
@@ -36,6 +39,11 @@ var imports = new LuxonServerImports
     GamePluginOnAttach = csImports.GamePluginOnAttach,
     GamePluginOnCreateGame = csImports.GamePluginOnCreateGame,
     GamePluginOnJoinGame = csImports.GamePluginOnJoinGame,
+    GamePluginBeforeJoin = (plugin, game, msg, peer) =>
+    {
+        Console.WriteLine("GamePluginBeforeJoin");
+        return LuxonGamePluginResult.Continue;
+    },
     GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
 };
 
@@ -58,13 +66,13 @@ while (serverManager.RunOnce())
 
         if (task.IsCompletedSuccessfully)
         {
-            Console.WriteLine("[ServerHost] [debug] Plugin task completed successfully");
+            LogPluginTaskCompletedSuccessfully(logger);
         }
         else
         {
             if (task.IsCanceled)
             {
-                Console.WriteLine("[ServerHost] [warning] Plugin task was cancelled");
+                LogPluginTaskWasCanceled(logger);
             }
             else if (task.IsFaulted)
             {
@@ -99,14 +107,30 @@ while (serverManager.RunOnce())
     }
 }
 
-static void OnUnhandledPluginException(Exception exception)
+void OnUnhandledPluginException(Exception exception)
 {
     Exception displayException =
         (exception is AggregateException { InnerExceptions: [{ } singleException] })
             ? singleException
             : exception;
 
-    Console.WriteLine(
-        $"[ServerHost] [error] Unhandled exception inside plugin callback: {displayException}"
+    LogUnhandledExceptionInPluginCallback(logger, exception);
+}
+
+partial class Program
+{
+    [LoggerMessage(LogLevel.Error, "Unhandled exception in plugin callback")]
+    static partial void LogUnhandledExceptionInPluginCallback(
+        ILogger<Program> logger,
+        Exception exception
     );
+
+    [LoggerMessage(LogLevel.Debug, "Plugin task completed successfully")]
+    static partial void LogPluginTaskCompletedSuccessfully(ILogger<Program> logger);
+
+    [LoggerMessage(LogLevel.Information, "Using custom lib path: {CustomLibPath}")]
+    static partial void LogUsingCustomLibPath(ILogger<Program> logger, string customLibPath);
+
+    [LoggerMessage(LogLevel.Warning, "Plugin task was canceled")]
+    static partial void LogPluginTaskWasCanceled(ILogger<Program> logger);
 }

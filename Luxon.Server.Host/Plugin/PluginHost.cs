@@ -11,10 +11,8 @@ internal sealed class PluginHost : IPluginHost
 
     public IReadOnlyList<IActor> GameActors => this.GameActorsInternal.AsReadOnly();
 
-    private static LoggerFactory LoggerFactory { get; } = new();
-
     public ILogger<T> CreateLogger<T>()
     {
-        return LoggerFactory.CreateLogger<T>();
+        return LoggerConfiguration.Factory.CreateLogger<T>();
     }
 }
