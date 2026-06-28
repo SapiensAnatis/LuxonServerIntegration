@@ -6,107 +6,109 @@ namespace Luxon.Server.GluonPlugin.Shared.Helpers;
 
 internal static class CollectionExtensions
 {
-    public static int GetInt(this IDictionary<object, object?> hashtable, string key)
+    extension(IDictionary<object, object?> hashtable)
     {
-        if (!hashtable.TryGetInt(key, out int value))
+        public int GetInt(string key)
         {
-            throw new ArgumentException(
-                $"IDictionary<object, object?> did not contain required integer value for key {key}",
-                nameof(key)
-            );
+            if (!hashtable.TryGetInt(key, out int value))
+            {
+                throw new ArgumentException(
+                    $"IDictionary<object, object?> did not contain required integer value for key {key}",
+                    nameof(key)
+                );
+            }
+
+            return value;
         }
 
-        return value;
-    }
-
-    public static long GetLong(this IDictionary<object, object?> hashtable, string key)
-    {
-        if (!hashtable.TryGetLong(key, out long value))
+        public long GetLong(string key)
         {
-            throw new ArgumentException(
-                $"IDictionary<object, object?> did not contain required integer value for key {key}",
-                nameof(key)
-            );
+            if (!hashtable.TryGetLong(key, out long value))
+            {
+                throw new ArgumentException(
+                    $"IDictionary<object, object?> did not contain required integer value for key {key}",
+                    nameof(key)
+                );
+            }
+
+            return value;
         }
 
-        return value;
-    }
-
-    public static bool TryGetValue(
-        this IDictionary<object, object?>? hashtable,
-        string key,
-        [NotNullWhen(true)] out object? value
-    )
-    {
-        value = null;
-
-        if (hashtable is null)
+        public bool TryGetInt(string key, out int value)
         {
+            value = 0;
+
+            if (!hashtable.TryGetValue(key, out object? objValue))
+            {
+                return false;
+            }
+
+            if (objValue is int intValue)
+            {
+                value = intValue;
+                return true;
+            }
+            else if (objValue is string stringValue)
+            {
+                value = int.Parse(stringValue, CultureInfo.InvariantCulture);
+                return true;
+            }
+
             return false;
         }
 
-        value = hashtable[key];
-
-        if (value is null)
+        public bool TryGetLong(string key, out long value)
         {
+            value = 0;
+
+            if (!hashtable.TryGetValue(key, out object? objValue))
+            {
+                return false;
+            }
+
+            if (objValue is long longValue)
+            {
+                value = longValue;
+                return true;
+            }
+            else if (objValue is string stringValue)
+            {
+                value = long.Parse(stringValue, CultureInfo.InvariantCulture);
+                return true;
+            }
+
             return false;
         }
 
-        return true;
+        public void InitializeViewerId()
+        {
+            if (!hashtable.ContainsKey(ActorPropertyKeys.ViewerId))
+            {
+                hashtable.Add(ActorPropertyKeys.ViewerId, hashtable[ActorPropertyKeys.PlayerId]);
+            }
+        }
     }
 
-    public static bool TryGetInt(
-        this IDictionary<object, object?> hashtable,
-        string key,
-        out int value
-    )
+    extension(IDictionary<object, object?>? hashtable)
     {
-        value = 0;
-
-        if (!hashtable.TryGetValue(key, out object? objValue))
+        public bool TryGetValue(string key, [NotNullWhen(true)] out object? value)
         {
-            return false;
-        }
+            value = null;
 
-        if (objValue is int intValue)
-        {
-            value = intValue;
+            if (hashtable is null)
+            {
+                return false;
+            }
+
+            value = hashtable[key];
+
+            if (value is null)
+            {
+                return false;
+            }
+
             return true;
         }
-        else if (objValue is string stringValue)
-        {
-            value = int.Parse(stringValue, CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        return false;
-    }
-
-    public static bool TryGetLong(
-        this IDictionary<object, object?> hashtable,
-        string key,
-        out long value
-    )
-    {
-        value = 0;
-
-        if (!hashtable.TryGetValue(key, out object? objValue))
-        {
-            return false;
-        }
-
-        if (objValue is long longValue)
-        {
-            value = longValue;
-            return true;
-        }
-        else if (objValue is string stringValue)
-        {
-            value = long.Parse(stringValue, CultureInfo.InvariantCulture);
-            return true;
-        }
-
-        return false;
     }
 
     // public static bool TryGetInt(this PropertyBag<object>? properties, string key, out int value)
@@ -174,15 +176,4 @@ internal static class CollectionExtensions
     //
     //     return false;
     // }
-
-    public static void InitializeViewerId(this IDictionary<object, object?> actorProperties)
-    {
-        if (!actorProperties.ContainsKey(ActorPropertyKeys.ViewerId))
-        {
-            actorProperties.Add(
-                ActorPropertyKeys.ViewerId,
-                actorProperties[ActorPropertyKeys.PlayerId]
-            );
-        }
-    }
 }
