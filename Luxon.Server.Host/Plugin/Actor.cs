@@ -26,7 +26,7 @@ internal sealed class Actor : IActor
 
             return field;
         }
-        set;
+        init;
     }
 
     public Actor(Game game, GamePeer gamePeer)

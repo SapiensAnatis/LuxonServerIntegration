@@ -118,18 +118,20 @@ internal sealed partial class CSharpServerImports(
         CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
 #pragma warning restore CA2000
 
-        Task pluginCallback = plugin.OnJoin(info, cts.Token);
-
-        info.OnResultSet(res =>
-        {
-            // The GamePeer joiner we got here seems to be a stack variable. To keep using it in subsequent callbacks,
-            // it needs to point to the GamePeer inside the Game _after_ the join has processed. We can't do this right
-            // now since we need Luxon to finish processing the join, but we will tell the next consumer to do it.
-            if (res == LuxonGamePluginResult.Continue)
-            {
-                actor.InvalidateGamePeer();
-            }
-        });
+#pragma warning disable CA2008 // Do not create tasks without passing a TaskScheduler. We do not have a custom SynchronizationContext and this is application code so it does not matter how the task is scheduled.
+        Task pluginCallback = plugin
+            .OnJoin(info, cts.Token)
+            .ContinueWith(
+                _ =>
+                {
+                    // The GamePeer joiner we got here seems to be a stack variable. To keep using it in subsequent callbacks,
+                    // it needs to point to the GamePeer inside the Game _after_ the join has processed. We can't do this right
+                    // now since we need Luxon to finish processing the join, but we will tell the next consumer to do it.
+                    actor.InvalidateGamePeer();
+                },
+                TaskContinuationOptions.ExecuteSynchronously
+            );
+#pragma warning restore CA2008
 
         return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
@@ -310,7 +312,7 @@ internal sealed partial class CSharpServerImports(
         {
             // The plugin callback completed synchronously.
 
-            this.LogPluginCallbackReturnedSynchronously();
+            this.LogPluginCallbackReturnedSynchronously(info.GetType().Name);
 
             cts.Dispose();
 
@@ -376,7 +378,7 @@ internal sealed partial class CSharpServerImports(
     {
         this.SetupTaskCallbacks(ctx);
 
-        ctx.CallInfo.OnResultSet(_ => gameManager.CommandRestartQueue.Enqueue(ctx));
+        ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
     }
 
     private IGamePlugin GetPlugin(Game game, uint pluginId)
@@ -459,8 +461,8 @@ internal sealed partial class CSharpServerImports(
     [LoggerMessage(LogLevel.Debug, "Detected previous command context")]
     partial void DetectedPreviousContext();
 
-    [LoggerMessage(LogLevel.Debug, "Plugin callback returned synchronously")]
-    partial void LogPluginCallbackReturnedSynchronously();
+    [LoggerMessage(LogLevel.Debug, "Plugin callback set result ({InfoTypeName}) synchronously")]
+    partial void LogPluginCallbackReturnedSynchronously(string infoTypeName);
 
     [LoggerMessage(LogLevel.Debug, "Plugin suspended without setting result")]
     partial void LogPluginSuspendedWithoutSettingResult();

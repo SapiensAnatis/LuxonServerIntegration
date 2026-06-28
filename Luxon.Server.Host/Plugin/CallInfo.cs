@@ -7,7 +7,7 @@ namespace Luxon.Server.Host.Plugin;
 
 internal abstract class CallInfo : ICallInfo
 {
-    private List<Action<LuxonGamePluginResult>> onResultSetCallbacks = [];
+    private Action? onResultSet;
 
     public required IOperationRequest OperationRequest { get; init; }
 
@@ -36,13 +36,9 @@ internal abstract class CallInfo : ICallInfo
 
     public bool IsProcessed => this.HasResult();
 
-    /// <summary>
-    /// Configures a callback to be invoked when a result is set. Can be called multiple times to set up multiple callbacks.
-    /// </summary>
-    /// <param name="onResultSet">The callback to invoke. Accepts a single parameter that is the type of result that was set.</param>
-    public void OnResultSet(Action<LuxonGamePluginResult> onResultSet)
+    public void OnResultSet(Action onResultSet)
     {
-        this.onResultSetCallbacks.Add(onResultSet);
+        this.onResultSet = onResultSet;
     }
 
     private void SetResult(LuxonGamePluginResult result)
@@ -54,9 +50,6 @@ internal abstract class CallInfo : ICallInfo
 
         this.Result = result;
 
-        foreach (Action<LuxonGamePluginResult> cb in this.onResultSetCallbacks)
-        {
-            cb.Invoke(result);
-        }
+        this.onResultSet?.Invoke();
     }
 }
