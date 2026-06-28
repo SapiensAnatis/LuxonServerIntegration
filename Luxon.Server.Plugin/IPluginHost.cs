@@ -8,5 +8,26 @@ public interface IPluginHost
 
     ILogger<T> CreateLogger<T>();
 
-    public IReadOnlyList<IActor> GameActors { get; }
+    IReadOnlyList<IActor> GameActors { get; }
+
+    ILogger<IPluginHost> Logger { get; }
+
+    IDictionary<object, object?> GameProperties { get; }
+
+    public void BroadcastEvent(
+        byte target,
+        int senderActor,
+        byte targetGroup,
+        byte evCode,
+        IDictionary<byte, object> data,
+        byte cacheOp
+    );
+
+    public void BroadcastEvent(
+        IList<int> receiverActors,
+        int senderActor,
+        byte evCode,
+        IDictionary<byte, object> data,
+        byte cacheOp
+    );
 }

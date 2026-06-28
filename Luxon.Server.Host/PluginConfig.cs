@@ -4,11 +4,21 @@ using SharpYaml.Serialization;
 
 namespace Luxon.Server.Host;
 
+[SuppressMessage(
+    "Microsoft.Performance",
+    "CA1812:AvoidUninstantiatedInternalClasses",
+    Justification = "Class is instantiated by configuration binding"
+)]
 internal sealed class PluginConfigList
 {
     public required IReadOnlyList<PluginConfig> Plugins { get; init; }
 }
 
+[SuppressMessage(
+    "Microsoft.Performance",
+    "CA1812:AvoidUninstantiatedInternalClasses",
+    Justification = "Class is instantiated by configuration binding"
+)]
 internal sealed class PluginConfig
 {
     public required string Name { get; init; }

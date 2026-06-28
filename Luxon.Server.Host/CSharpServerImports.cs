@@ -62,6 +62,11 @@ internal sealed partial class CSharpServerImports(
             OperationRequest = opr,
         };
 
+        if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
+        {
+            concretePluginHost.GameProperties = info.Request.GameProperties;
+        }
+
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
         CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
 #pragma warning restore CA2000

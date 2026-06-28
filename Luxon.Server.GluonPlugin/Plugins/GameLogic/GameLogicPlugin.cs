@@ -183,7 +183,7 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
         if (this.actorState.All(x => x.Value.Ready))
         {
-            // this.PluginHost.RaiseEvent(Event.StartQuest, new Dictionary<string, string>());
+            this.PluginHost.RaiseEvent(Event.StartQuest, new Dictionary<string, string>());
 
             this.roomState.StartActorCount = this.PluginHost.GameActors.Count;
         }

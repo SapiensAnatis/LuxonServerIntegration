@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.Host;
 
-internal sealed class LoggerConfiguration
+internal static class LoggerConfiguration
 {
     public static ILoggerFactory Factory { get; } =
         LoggerFactory.Create(builder =>

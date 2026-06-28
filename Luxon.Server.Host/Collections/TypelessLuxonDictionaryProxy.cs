@@ -7,7 +7,7 @@ namespace Luxon.Server.Host.Collections;
 internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> luxonDictionary)
     : IDictionary<object, object?>
 {
-    private class Enumerator(IEnumerator<KeyValuePair<Value, Value>> luxonEnumerator)
+    private sealed class Enumerator(IEnumerator<KeyValuePair<Value, Value>> luxonEnumerator)
         : IEnumerator<KeyValuePair<object, object?>>
     {
         private KeyValuePair<object, object?>? current;
