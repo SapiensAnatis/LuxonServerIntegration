@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Luxon.Ser;
 
 namespace Luxon.Server.Host.Helpers;
@@ -8,6 +9,14 @@ internal static class ValueExtensions
     {
         public static Value FromManaged(object? managedValue)
         {
+            if (managedValue is Value)
+            {
+                throw new ArgumentException(
+                    "Attempted to put a Luxon.Ser.Value inside a Luxon.Ser.Value",
+                    nameof(managedValue)
+                );
+            }
+
             return new Value(GetTypeTag(managedValue), managedValue);
         }
 

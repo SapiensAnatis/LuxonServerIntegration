@@ -10,6 +10,5 @@
   <ItemGroup>
     <PackageReference Include="MessagePack" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
-    <PackageReference Include="System.Text.Json" />
   </ItemGroup>
 </Project>
