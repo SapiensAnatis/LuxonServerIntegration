@@ -48,7 +48,7 @@ internal sealed class PluginHost : IPluginHost
             sendParameters.ChannelId,
             interestGroup
         );
-        evt.SetData(Value.FromManagedDictionary(data));
+        evt.SetTopParams(Value.FromManagedDictionary(data));
 
         this.game.BroadcastEvent(evt);
     }
@@ -72,7 +72,7 @@ internal sealed class PluginHost : IPluginHost
             sendParameters.ChannelId,
             interestGroupAllUsers
         );
-        evt.SetData(Value.FromManagedDictionary(data));
+        evt.SetTopParams(Value.FromManagedDictionary(data));
 
         this.game.BroadcastEvent(evt);
     }
@@ -93,7 +93,7 @@ internal sealed class PluginHost : IPluginHost
 
         if (actorNr == 0)
         {
-            this.game.InsertGameProperties(Value.FromManagedDictionary(data), broadcast);
+            this.game.InsertGameProperties(Value.FromManagedHashtable(data), broadcast);
             return true;
         }
 

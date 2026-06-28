@@ -38,13 +38,13 @@ internal static class ActorExtensions
         {
             if (
                 actor.Properties.TryGetValue(ActorPropertyKeys.UsePartySlot, out object? value)
-                || value is not int[] partySlots
+                && value is int[] partySlots
             )
             {
-                throw new InvalidOperationException("Failed to get party slots");
+                return partySlots;
             }
 
-            return partySlots;
+            throw new InvalidOperationException("Failed to get party slots");
         }
     }
 }

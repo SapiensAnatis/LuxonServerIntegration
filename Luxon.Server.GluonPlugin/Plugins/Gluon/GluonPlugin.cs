@@ -77,16 +77,19 @@ internal sealed class GluonPlugin(
     //     }
     // }
 
-    // public override void OnRaiseEvent(IRaiseEventCallInfo info)
-    // {
-    //     gameLogicPlugin.OnRaiseEvent(info);
-    //     // this.stateManagerPlugin.OnRaiseEvent(info);
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         info.Continue();
-    //     }
-    // }
+    public override async Task OnRaiseEvent(
+        IRaiseEventCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        await gameLogicPlugin.OnRaiseEvent(info, cancellationToken);
+        // this.stateManagerPlugin.OnRaiseEvent(info);
+
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
 
     public override async Task BeforeSetProperties(
         IBeforeSetPropertiesCallInfo info,

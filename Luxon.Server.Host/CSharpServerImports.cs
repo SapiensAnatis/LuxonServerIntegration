@@ -289,6 +289,12 @@ internal sealed partial class CSharpServerImports(
             previousContext.ManagedMessage
         );
 
+        this.logger.LogInformation(
+            "Plugin callback set result ({TypeName}) after async suspension: {Result}",
+            previousContext.CallInfo.GetType().Name,
+            result
+        );
+
         // If the plugin has set a result, but is now suspended again, it will be monitored by the task queue; we added it when we originally added it to the info queue.
         // Do not dispose in this case.
 

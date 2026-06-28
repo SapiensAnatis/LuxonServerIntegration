@@ -4,4 +4,4 @@ Plugins:
     AssemblyName: "Luxon.Server.GluonPlugin.dll"
     Type: "Luxon.Server.GluonPlugin.Plugins.Gluon.GluonPluginFactory"
     Configuration: 
-      ApiServerUrl: "https://dawnshard.co.uk/"
+      ApiServerUrl: "http://192.168.0.65"

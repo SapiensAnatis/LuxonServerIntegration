@@ -41,7 +41,7 @@ internal sealed class Actor : IActor
 
     public void SetProperties(IDictionary<object, object?> properties)
     {
-        this.GamePeer.SetActorProperties(Value.FromManagedDictionary(properties));
+        this.GamePeer.SetActorProperties(Value.FromManagedHashtable(properties));
     }
 
     public void InvalidateGamePeer()

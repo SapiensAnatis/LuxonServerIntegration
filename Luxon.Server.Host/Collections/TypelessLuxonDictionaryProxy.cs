@@ -80,9 +80,9 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
         throw new NotImplementedException();
     }
 
-    public int Count => throw new NotImplementedException();
+    public int Count => luxonDictionary.Count;
 
-    public bool IsReadOnly => throw new NotImplementedException();
+    public bool IsReadOnly => luxonDictionary.IsReadOnly;
 
     public void Add(object key, object? value)
     {

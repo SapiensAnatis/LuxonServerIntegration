@@ -23,7 +23,7 @@ internal static partial class PluginHostExtensions
         /// <param name="eventCode">The event code to raise.</param>
         /// <param name="eventData">The event data.</param>
         /// <param name="target">The actor to target -- if null, all actors will be targeted.</param>
-        public void RaiseEvent(Event eventCode, object eventData, int? target = null)
+        public void RaiseMsgpackEvent(Event eventCode, object eventData, int? target = null)
         {
             byte[] serializedEvent = MessagePackSerializer.Serialize(eventData, MessagePackOptions);
             var props = new Dictionary<byte, object?>()

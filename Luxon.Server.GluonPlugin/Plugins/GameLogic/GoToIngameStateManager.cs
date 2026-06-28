@@ -71,7 +71,7 @@ internal sealed partial class GoToIngameStateManager
         {
             // For time attack solo quests that don't have a lobby phase
             this.SetGoToIngameInfo();
-            this.pluginHost.RaiseEvent(Event.StartQuest, new Dictionary<string, object>());
+            this.pluginHost.RaiseMsgpackEvent(Event.StartQuest, new Dictionary<string, object>());
         }
     }
 
@@ -191,7 +191,7 @@ internal sealed partial class GoToIngameStateManager
             RankingType = rankingType,
         };
 
-        this.pluginHost.RaiseEvent(Event.Party, evt);
+        this.pluginHost.RaiseMsgpackEvent(Event.Party, evt);
     }
 
     /// <summary>
@@ -247,7 +247,7 @@ internal sealed partial class GoToIngameStateManager
                     HeroParams = heroParams.Take(state.UsedMemberCount).ToArray(),
                 };
 
-                this.pluginHost.RaiseEvent(Event.CharacterData, evt);
+                this.pluginHost.RaiseMsgpackEvent(Event.CharacterData, evt);
             }
         }
     }
