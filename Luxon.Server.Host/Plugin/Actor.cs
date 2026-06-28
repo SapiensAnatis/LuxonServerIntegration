@@ -6,20 +6,47 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal sealed class GameActor : IActor
+internal sealed class Actor : IActor
 {
-    public GamePeer GamePeer { get; set; }
+    private Game game;
+    private bool gamePeerStale;
 
-    public GameActor(GamePeer GamePeer)
+    private GamePeer GamePeer
     {
-        this.GamePeer = GamePeer;
+        get
+        {
+            if (this.gamePeerStale)
+            {
+                field =
+                    this.game.FindPeerByActorId(this.ActorNr)
+                    ?? throw new InvalidOperationException($"Actor {this.ActorNr} not found");
+
+                this.gamePeerStale = false;
+            }
+
+            return field;
+        }
+        set;
     }
 
-    public int ActorNr => this.GamePeer.ActorId;
+    public Actor(Game game, GamePeer gamePeer)
+    {
+        this.game = game;
+        this.GamePeer = gamePeer;
+        this.ActorNr = gamePeer.ActorId;
+        this.gamePeerStale = false;
+    }
+
+    public int ActorNr { get; set; }
 
     public void SetProperties(IDictionary<object, object?> properties)
     {
         this.GamePeer.SetActorProperties(Value.FromManagedDictionary(properties));
+    }
+
+    public void InvalidateGamePeer()
+    {
+        this.gamePeerStale = true;
     }
 
     public IDictionary<object, object?> Properties

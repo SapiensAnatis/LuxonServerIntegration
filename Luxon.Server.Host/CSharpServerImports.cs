@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.ExceptionServices;
 using Luxon.Ser;
 using Luxon.Server.Host.Collections;
 using Luxon.Server.Host.Enums.DictKeyCodes;
@@ -93,11 +94,11 @@ internal sealed partial class CSharpServerImports(
 
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
-        if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
-        {
-            this.LogUpdatingGameActors(joiner.ActorId);
-            concretePluginHost.GameActorsInternal.Add(new Actor(joiner));
-        }
+        this.LogUpdatingGameActors(joiner.ActorId);
+        var concretePluginHost = ((PluginHost)((PluginBase)plugin).PluginHost);
+
+        var actor = new Actor(game, joiner);
+        concretePluginHost.GameActorsInternal.Add(actor);
 
         Message managedRequest = request.ToManagedMessage();
 
@@ -118,6 +119,17 @@ internal sealed partial class CSharpServerImports(
 #pragma warning restore CA2000
 
         Task pluginCallback = plugin.OnJoin(info, cts.Token);
+
+        info.OnResultSet(res =>
+        {
+            // The GamePeer joiner we got here seems to be a stack variable. To keep using it in subsequent callbacks,
+            // it needs to point to the GamePeer inside the Game _after_ the join has processed. We can't do this right
+            // now since we need Luxon to finish processing the join, but we will tell the next consumer to do it.
+            if (res == LuxonGamePluginResult.Continue)
+            {
+                actor.InvalidateGamePeer();
+            }
+        });
 
         return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
@@ -305,6 +317,19 @@ internal sealed partial class CSharpServerImports(
             return FinishCommand(info, request, managedRequest);
         }
 
+        if (pluginCallback.IsFaulted)
+        {
+            // The task faulted synchronously.
+            if (pluginCallback is { Exception.InnerException: { } singleException })
+            {
+                ExceptionDispatchInfo.Capture(singleException).Throw();
+            }
+            else
+            {
+                throw pluginCallback.Exception;
+            }
+        }
+
         if (info.HasResult())
         {
             // The plugin returned info before suspending its Task, so we can finish the Luxon command. We will keep
@@ -351,7 +376,7 @@ internal sealed partial class CSharpServerImports(
     {
         this.SetupTaskCallbacks(ctx);
 
-        ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
+        ctx.CallInfo.OnResultSet(_ => gameManager.CommandRestartQueue.Enqueue(ctx));
     }
 
     private IGamePlugin GetPlugin(Game game, uint pluginId)

@@ -15,7 +15,7 @@ internal sealed class PluginConfiguration
     //
     // public required Uri TimeAttackEndpoint { get; init; }
     //
-    // public int ReplayTimeoutSeconds { get; init; }
+    public int ReplayTimeoutSeconds { get; init; } = 30;
     //
     // public required string BearerToken { get; init; }
     //

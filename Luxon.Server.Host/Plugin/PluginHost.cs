@@ -10,19 +10,22 @@ internal sealed class PluginHost : IPluginHost
 {
     private readonly Game game;
 
-    public PluginHost(Game game)
+    public PluginHost(Game game, HttpClient httpClient)
     {
         this.game = game;
+        this.HttpClient = httpClient;
     }
 
     public string GameId => this.game.Id;
 
-    public List<Actor> GameActorsInternal { get; } = [];
+    public List<IActor> GameActorsInternal { get; } = [];
 
     public IReadOnlyList<IActor> GameActors => this.GameActorsInternal.AsReadOnly();
 
     public ILogger<IPluginHost> Logger { get; } =
         LoggerConfiguration.Factory.CreateLogger<IPluginHost>();
+
+    public HttpClient HttpClient { get; }
 
     public IDictionary<object, object?> GameProperties { get; set; } =
         new Dictionary<object, object?>();
@@ -94,7 +97,7 @@ internal sealed class PluginHost : IPluginHost
             return true;
         }
 
-        Actor? actor = this.GameActorsInternal.Find((a) => a.ActorNr == actorNr);
+        IActor? actor = this.GameActorsInternal.Find((a) => a.ActorNr == actorNr);
         if (actor == null)
         {
             throw new ArgumentException($"Actor {actorNr} not found.", nameof(actorNr));

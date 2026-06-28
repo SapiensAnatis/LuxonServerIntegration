@@ -8,13 +8,30 @@ using SharpYaml;
 
 namespace Luxon.Server.Host;
 
-internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
+internal sealed class PluginManager : IDisposable
 {
-    private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap = [];
+    private readonly IConfigurationRoot pluginConfiguration;
+    private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap;
+    private readonly HttpClient httpClient;
+
+    public PluginManager(IConfigurationRoot pluginConfiguration)
+    {
+        this.pluginConfiguration = pluginConfiguration;
+        this.pluginIdToPluginMap = [];
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by HttpClient.
+        var handler = new SocketsHttpHandler()
+        {
+            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+        };
+#pragma warning restore CA2000
+
+        this.httpClient = new HttpClient(handler);
+    }
 
     public void LoadPluginsFromConfig()
     {
-        var config = pluginConfiguration.Get<PluginConfigList>();
+        var config = this.pluginConfiguration.Get<PluginConfigList>();
 
         if (config is not { Plugins: { Count: > 0 } plugins })
         {
@@ -76,7 +93,7 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
             return false;
         }
 
-        PluginHost host = new(game);
+        PluginHost host = new(game, this.httpClient);
 
         plugin = pluginDetails.Factory.Create(
             host,
@@ -93,4 +110,9 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
         PluginAssemblyLoadContext AssemblyLoadContext,
         IConfiguration Configuration
     );
+
+    public void Dispose()
+    {
+        this.httpClient.Dispose();
+    }
 }

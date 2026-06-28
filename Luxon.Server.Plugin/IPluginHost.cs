@@ -12,6 +12,8 @@ public interface IPluginHost
 
     ILogger<IPluginHost> Logger { get; }
 
+    HttpClient HttpClient { get; }
+
     IDictionary<object, object?> GameProperties { get; }
 
     public void BroadcastEvent(

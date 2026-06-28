@@ -5,4 +5,5 @@ public interface IActor
     int ActorNr { get; }
 
     IDictionary<object, object?> Properties { get; }
+    void SetProperties(IDictionary<object, object?> properties);
 }

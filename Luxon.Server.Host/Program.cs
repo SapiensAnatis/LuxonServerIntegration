@@ -19,7 +19,7 @@ IConfigurationRoot configuration = new ConfigurationBuilder()
     .Add(new YamlConfigurationSource(pluginPath))
     .Build();
 
-var pluginManager = new PluginManager(configuration);
+using var pluginManager = new PluginManager(configuration);
 pluginManager.LoadPluginsFromConfig();
 
 var gameManager = new GameManager();
