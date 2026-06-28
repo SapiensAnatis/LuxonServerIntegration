@@ -28,16 +28,16 @@ internal sealed class GluonPlugin(
         }
     }
 
-    // public override void OnJoin(IJoinGameCallInfo info)
-    // {
-    //     gameLogicPlugin.OnJoin(info);
-    //     // this.stateManagerPlugin.OnJoin(info);
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         info.Continue();
-    //     }
-    // }
+    public override async Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken)
+    {
+        await gameLogicPlugin.OnJoin(info, cancellationToken);
+        // this.stateManagerPlugin.OnJoin(info);
+
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
 
     // public override void OnLeave(ILeaveGameCallInfo info)
     // {
