@@ -60,16 +60,16 @@ internal sealed class YamlConfigurationProvider(string filePath) : Configuration
 
                 break;
             }
-            case null:
-            {
-                var path = ConfigurationPath.Combine(pathSegments);
-                data.Add(path, null);
-                break;
-            }
             case YamlValue scalar:
             {
                 var path = ConfigurationPath.Combine(pathSegments);
                 data.Add(path, scalar.Value);
+                break;
+            }
+            case null:
+            {
+                var path = ConfigurationPath.Combine(pathSegments);
+                data.Add(path, null);
                 break;
             }
         }

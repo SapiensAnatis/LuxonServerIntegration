@@ -7,10 +7,10 @@ namespace Luxon.Server.Host.Collections;
 internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> luxonDictionary)
     : IDictionary<object, object?>
 {
-    struct Enumerator(IEnumerator<KeyValuePair<Value, Value>> luxonEnumerator)
+    private class Enumerator(IEnumerator<KeyValuePair<Value, Value>> luxonEnumerator)
         : IEnumerator<KeyValuePair<object, object?>>
     {
-        private KeyValuePair<object, object?>? current = null;
+        private KeyValuePair<object, object?>? current;
 
         public bool MoveNext()
         {
@@ -56,12 +56,12 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
 
     public void Add(KeyValuePair<object, object?> item)
     {
-        throw new NotImplementedException();
+        this.Add(item.Key, item.Value);
     }
 
     public void Clear()
     {
-        throw new NotImplementedException();
+        luxonDictionary.Clear();
     }
 
     public bool Contains(KeyValuePair<object, object?> item)
