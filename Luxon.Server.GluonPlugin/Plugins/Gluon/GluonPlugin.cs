@@ -88,15 +88,18 @@ internal sealed class GluonPlugin(
     //     }
     // }
 
-    // public override void BeforeSetProperties(IBeforeSetPropertiesCallInfo info)
-    // {
-    //     gameLogicPlugin.BeforeSetProperties(info);
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         info.Continue();
-    //     }
-    // }
+    public override async Task BeforeSetProperties(
+        IBeforeSetPropertiesCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        await gameLogicPlugin.BeforeSetProperties(info, cancellationToken);
+
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
 
     // public override void OnSetProperties(ISetPropertiesCallInfo info)
     // {

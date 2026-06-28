@@ -13,7 +13,8 @@ internal static class ValueExtensions
 
         public static Value FromManagedDictionary<TKey>(IDictionary<TKey, object?> dictionary)
         {
-            return new Value(21, MakeLuxonDictionary(dictionary));
+            var luxonDict = MakeLuxonDictionary(dictionary);
+            return Value.FromManaged(luxonDict);
         }
     }
 
@@ -21,31 +22,41 @@ internal static class ValueExtensions
     {
         if (value == null)
         {
-            return 0;
+            return IpcValueTypes.Null;
         }
 
         Type type = value.GetType();
 
         if (type == typeof(int))
         {
-            return 4;
+            return IpcValueTypes.Int32;
         }
 
         if (type == typeof(string))
         {
-            return 8;
+            return IpcValueTypes.String;
         }
 
-        throw new NotImplementedException();
+        if (type == typeof(byte[]))
+        {
+            return IpcValueTypes.ByteArray;
+        }
+
+        if (type.IsAssignableTo(typeof(IDictionary<Value, Value>)))
+        {
+            return IpcValueTypes.Hashtable;
+        }
+
+        throw new NotImplementedException($"Cannot (yet) convert {type} to a Luxon value.");
     }
 
-    private static Value MakeLuxonDictionary<TKey>(IDictionary<TKey, object?> managedDictionary)
+    private static Dictionary<Value, Value> MakeLuxonDictionary<TKey>(
+        IDictionary<TKey, object?> managedDictionary
+    )
     {
-        var dict = managedDictionary.ToDictionary(
+        return managedDictionary.ToDictionary(
             x => Value.FromManaged(x.Key),
             x => Value.FromManaged(x.Value)
         );
-
-        return Value.FromManaged(dict);
     }
 }

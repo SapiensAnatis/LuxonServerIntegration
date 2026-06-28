@@ -188,7 +188,8 @@ internal sealed partial class GameLogicPlugin : PluginBase
             ) && objValue is int value
         )
         {
-            this.goToIngameStateManager.OnSetGoToIngameState(info, value);
+            logger.LogInformation("Received GoToIngameState");
+            await this.goToIngameStateManager.OnSetGoToIngameState(info, value);
         }
 
         if (!info.IsProcessed)
