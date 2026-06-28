@@ -280,7 +280,11 @@ internal sealed partial class CSharpServerImports(
             )
         )
         {
-            throw new InvalidOperationException("Failed to get game properties");
+            // When a user joins a game which they did not create, we won't get GameProperties, so substitute an empty
+            // dictionary.
+            // TODO: This branch should throw in the create game case, maybe check request.OperationCode?
+
+            gameProperties = new TypelessLuxonDictionaryProxy(new Dictionary<Value, Value>());
         }
 
         return new JoinGameRequest()

@@ -39,11 +39,6 @@ var imports = new LuxonServerImports
     GamePluginOnAttach = csImports.GamePluginOnAttach,
     GamePluginOnCreateGame = csImports.GamePluginOnCreateGame,
     GamePluginOnJoinGame = csImports.GamePluginOnJoinGame,
-    GamePluginBeforeJoin = (plugin, game, msg, peer) =>
-    {
-        Console.WriteLine("GamePluginBeforeJoin");
-        return LuxonGamePluginResult.Continue;
-    },
     GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
 };
 
