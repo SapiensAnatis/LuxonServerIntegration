@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Copy all .dll assemblies to output directory even though this is just a class library -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DragaliaAPI.Photon.Shared\DragaliaAPI.Photon.Shared.csproj" />
-    <ProjectReference Include="..\Luxon.Server.Plugin\Luxon.Server.Plugin.csproj">
-      <!-- Do not copy to output directory, this will be provided by Luxon.Server.Host -->
-      <Private>false</Private>
-    </ProjectReference>
+    <ProjectReference Include="..\Luxon.Server.Plugin\Luxon.Server.Plugin.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MessagePack" />

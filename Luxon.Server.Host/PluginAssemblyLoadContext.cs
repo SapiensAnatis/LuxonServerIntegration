@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.Loader;
 
@@ -12,13 +14,17 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
     );
 
     private readonly string pluginPath;
-    private readonly AssemblyDependencyResolver resolver;
+    private readonly AssemblyDependencyResolver pluginResolver;
+
+    private static readonly AssemblyDependencyResolver HostResolver = new(
+        Assembly.GetExecutingAssembly().Location
+    );
 
     public PluginAssemblyLoadContext(PluginConfig config)
         : base(name: $"PluginLoadContext_{config.Name}", isCollectible: false)
     {
         this.pluginPath = Path.Join(PluginsBasePath, config.AssemblyName);
-        this.resolver = new AssemblyDependencyResolver(this.pluginPath);
+        this.pluginResolver = new AssemblyDependencyResolver(this.pluginPath);
     }
 
     public Assembly LoadPlugin()
@@ -28,15 +34,13 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
 
     protected override Assembly? Load(AssemblyName name)
     {
-        if (name.Name == "Luxon.Server.Plugin")
+        if (HostResolver.ResolveAssemblyToPath(name) != null)
         {
-            // Load the same Luxon.Server.Plugin assembly as the host app, so that checks like
-            // pluginType.IsAssignableTo(typeof(IPluginFactory)) actually work. Returning null forwards
-            // to the default resolver.
+            // Dependency is provided by hosting environment, e.g. Luxon.Server.Plugin
             return null;
         }
 
-        string? path = this.resolver.ResolveAssemblyToPath(name);
+        string? path = this.pluginResolver.ResolveAssemblyToPath(name);
 
         if (path == null)
         {
