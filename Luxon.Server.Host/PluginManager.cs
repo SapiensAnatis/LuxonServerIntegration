@@ -76,7 +76,7 @@ internal sealed class PluginManager(IConfigurationRoot pluginConfiguration)
             return false;
         }
 
-        PluginHost host = new() { GameId = game.Id };
+        PluginHost host = new(game);
 
         plugin = pluginDetails.Factory.Create(
             host,

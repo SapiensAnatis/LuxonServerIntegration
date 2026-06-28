@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using Luxon.Ser;
+using Luxon.Server.Host.Helpers;
 
 namespace Luxon.Server.Host.Collections;
 
@@ -85,14 +86,14 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
 
     public void Add(object key, object? value)
     {
-        var luxonKey = new Value(GetTypeTag(key), key);
-        var luxonValue = new Value(GetTypeTag(value), value);
+        var luxonKey = Value.FromManaged(key);
+        var luxonValue = Value.FromManaged(value);
         luxonDictionary.Add(luxonKey, luxonValue);
     }
 
     public bool ContainsKey(object key)
     {
-        return luxonDictionary.ContainsKey(new Value(GetTypeTag(key), key));
+        return luxonDictionary.ContainsKey(Value.FromManaged(key));
     }
 
     public bool Remove(object key)
@@ -102,7 +103,7 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
 
     public bool TryGetValue(object key, out object? value)
     {
-        var luxonKey = new Value(GetTypeTag(key), key);
+        var luxonKey = Value.FromManaged(key);
         if (luxonDictionary.TryGetValue(luxonKey, out var luxonValue))
         {
             value = luxonValue.Content;
@@ -117,15 +118,15 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
     {
         get
         {
-            var luxonKey = new Value(GetTypeTag(key), key);
+            var luxonKey = Value.FromManaged(key);
             var luxonValue = luxonDictionary[luxonKey];
 
             return luxonValue.Content;
         }
         set
         {
-            var luxonKey = new Value(GetTypeTag(key), key);
-            var luxonValue = new Value(GetTypeTag(value), value);
+            var luxonKey = Value.FromManaged(key);
+            var luxonValue = Value.FromManaged(value);
 
             luxonDictionary[luxonKey] = luxonValue;
         }
@@ -134,26 +135,4 @@ internal sealed class TypelessLuxonDictionaryProxy(IDictionary<Value, Value> lux
     public ICollection<object> Keys => throw new NotImplementedException();
 
     public ICollection<object?> Values => throw new NotImplementedException();
-
-    private static int GetTypeTag(object? value)
-    {
-        if (value == null)
-        {
-            return 0;
-        }
-
-        Type type = value.GetType();
-
-        if (type == typeof(int))
-        {
-            return 4;
-        }
-
-        if (type == typeof(string))
-        {
-            return 8;
-        }
-
-        throw new NotImplementedException();
-    }
 }

@@ -26,7 +26,7 @@ internal static partial class PluginHostExtensions
         public void RaiseEvent(Event eventCode, object eventData, int? target = null)
         {
             byte[] serializedEvent = MessagePackSerializer.Serialize(eventData, MessagePackOptions);
-            var props = new Dictionary<byte, object>()
+            var props = new Dictionary<byte, object?>()
             {
                 { EventDataKey, serializedEvent },
                 { EventActorNrKey, 0 },
@@ -37,7 +37,14 @@ internal static partial class PluginHostExtensions
 
             if (target is null)
             {
-                pluginHost.BroadcastEvent(ReceiverGroup.All, 0, 0, (byte)eventCode, props, 0);
+                pluginHost.BroadcastEvent(
+                    ReceiverGroup.All,
+                    0,
+                    0,
+                    (byte)eventCode,
+                    props,
+                    new SendParameters { DeliveryMode = LuxonDeliveryMode.Reliable }
+                );
             }
             else
             {
@@ -47,7 +54,7 @@ internal static partial class PluginHostExtensions
                     0,
                     (byte)eventCode,
                     props,
-                    CacheOperations.DoNotCache
+                    new SendParameters { DeliveryMode = LuxonDeliveryMode.Reliable }
                 );
             }
         }

@@ -3,7 +3,12 @@
 /// <summary>
 /// Dragalia Lost event codes.
 /// </summary>
-public enum Event : byte
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Microsoft.Design",
+    "CA1028:EnumStorageShouldBeInt32",
+    Justification = "Events codes are internally represented as bytes in Photon"
+)]
+internal enum Event : byte
 {
     /// <summary>
     /// Event sent by clients when it has finished loading.

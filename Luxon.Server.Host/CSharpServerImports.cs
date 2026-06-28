@@ -83,13 +83,13 @@ internal sealed partial class CSharpServerImports(
         GamePeer joiner
     )
     {
-        this.LogJoinGameCalled();
-
         if (gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
         }
+
+        this.LogJoinGameCalled();
 
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
@@ -118,6 +118,53 @@ internal sealed partial class CSharpServerImports(
 #pragma warning restore CA2000
 
         Task pluginCallback = plugin.OnJoin(info, cts.Token);
+
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
+    }
+
+    public LuxonGamePluginResult GamePluginOnRaiseEvent(
+        uint pluginId,
+        Game game,
+        SerMessageRef request,
+        GamePeer raiser,
+        LuxonEvent evt,
+        byte cacheOp
+    )
+    {
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, request);
+        }
+
+        this.LogEventRaised(evt.RoutingMetadata.Code);
+
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
+
+        Message managedRequest = request.ToManagedMessage();
+
+        if (managedRequest.Payload is not OperationRequestMessage opr)
+        {
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
+        }
+
+        var info = new RaiseEventCallInfo
+        {
+            OperationRequest = opr,
+            Request = new RaiseEventRequest
+            {
+                EvCode = evt.RoutingMetadata.Code,
+                OperationCode = opr.OperationCode,
+                Parameters = opr.Parameters,
+            },
+            ActorNr = raiser.ActorId,
+        };
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        Task pluginCallback = plugin.OnRaiseEvent(info, cts.Token);
 
         return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
@@ -201,6 +248,8 @@ internal sealed partial class CSharpServerImports(
             // The plugin callback completed synchronously.
 
             this.LogPluginCallbackReturnedSynchronously();
+
+            cts.Dispose();
 
             return FinishCommand(info, request, managedRequest);
         }
@@ -345,4 +394,7 @@ internal sealed partial class CSharpServerImports(
         "Suspended command and set up callbacks - returning Continue"
     )]
     partial void LogSuspendedCommand();
+
+    [LoggerMessage(LogLevel.Debug, "Event raised: 0x{evt:}X")]
+    partial void LogEventRaised(byte evt);
 }

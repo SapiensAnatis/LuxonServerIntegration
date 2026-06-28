@@ -15,19 +15,19 @@ public interface IPluginHost
     IDictionary<object, object?> GameProperties { get; }
 
     public void BroadcastEvent(
-        byte target,
-        int senderActor,
         byte targetGroup,
+        int senderActor,
+        byte interestGroup,
         byte evCode,
-        IDictionary<byte, object> data,
-        byte cacheOp
+        IDictionary<byte, object?> data,
+        SendParameters sendParameters = new()
     );
 
     public void BroadcastEvent(
-        IList<int> receiverActors,
+        ReadOnlySpan<int> receiverActors,
         int senderActor,
         byte evCode,
-        IDictionary<byte, object> data,
-        byte cacheOp
+        IDictionary<byte, object?> data,
+        SendParameters sendParameters = new()
     );
 }

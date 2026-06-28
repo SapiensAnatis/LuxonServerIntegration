@@ -5,5 +5,3 @@ Plugins:
     Type: "Luxon.Server.GluonPlugin.Plugins.Gluon.GluonPluginFactory"
     Configuration: 
       ApiServerUrl: "https://dawnshard.co.uk/"
-      NestedObject:
-        SomeProperty: "lol"
