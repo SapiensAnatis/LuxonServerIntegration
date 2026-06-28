@@ -93,7 +93,7 @@ internal sealed class PluginHost : IPluginHost
 
         if (actorNr == 0)
         {
-            this.game.InsertGameProperties(Value.FromManagedDictionary(data));
+            this.game.InsertGameProperties(Value.FromManagedDictionary(data), broadcast);
             return true;
         }
 
