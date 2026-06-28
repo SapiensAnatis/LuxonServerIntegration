@@ -1,4 +1,8 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
+using DragaliaAPI.Photon.Shared.Models;
 using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.GluonPlugin.Shared.Constants;
@@ -41,7 +45,7 @@ internal sealed partial class GoToIngameStateManager
         this.logger = this.pluginHost.CreateLogger<GoToIngameStateManager>();
     }
 
-    public void OnSetGoToIngameState(IBeforeSetPropertiesCallInfo info, int value)
+    public async Task OnSetGoToIngameState(IBeforeSetPropertiesCallInfo info, int value)
     {
         int minValue = this
             .pluginHost.GameActors.Where(x => x.ActorNr != info.ActorNr) // Exclude the value which we are in the BeforeSet handler for
@@ -56,12 +60,12 @@ internal sealed partial class GoToIngameStateManager
         if (minValue > this.MinGoToIngameState)
         {
             this.MinGoToIngameState = minValue;
-            this.OnMinStateChange(info);
+            await this.OnMinStateChange(info);
         }
         else if (value == 1 && info.ActorNr == 1)
         {
             this.MinGoToIngameState = 1;
-            this.OnMinStateChange(info);
+            await this.OnMinStateChange(info);
         }
         else if (value == 0 && this.pluginHost.GetIsSoloPlay())
         {
@@ -78,7 +82,7 @@ internal sealed partial class GoToIngameStateManager
     /// Represents various stages of loading into a quest, during which events/properties need to be raised/set.
     /// </remarks>
     /// <param name="info">Call info.</param>
-    private void OnMinStateChange(ICallInfo info)
+    private async Task OnMinStateChange(ICallInfo info)
     {
         this.LogUpdatingMinState(this.MinGoToIngameState);
 
@@ -87,15 +91,15 @@ internal sealed partial class GoToIngameStateManager
             case 1:
                 this.SetGoToIngameInfo();
                 break;
-            // case 2:
-            //     this.RequestHeroParam(info);
-            //     break;
-            // case 3:
-            //     this.RaisePartyEvent();
-            //     break;
-            // case 4:
-            //     this.RaiseCharacterDataEvent();
-            //     break;
+            case 2:
+                await this.RequestHeroParam(info);
+                break;
+            case 3:
+                this.RaisePartyEvent();
+                break;
+            case 4:
+                this.RaiseCharacterDataEvent();
+                break;
         }
     }
 
@@ -122,6 +126,132 @@ internal sealed partial class GoToIngameStateManager
         );
     }
 
+    /// <summary>
+    /// Makes an outgoing request for <see cref="HeroParamData"/> for each player in the room.
+    /// </summary>
+    /// <param name="info">Call info.</param>
+    private async Task RequestHeroParam(ICallInfo info)
+    {
+        var heroParamRequest = this
+            .pluginHost.GameActors.Select(x => new ActorInfo()
+            {
+                QuestId = this.pluginHost.GetQuestId(),
+                ActorNr = x.ActorNr,
+                ViewerId = x.GetViewerId(),
+                PartySlots = x.GetPartySlots(),
+            })
+            .ToList();
+
+        var baseUri = this.pluginConfiguration.ApiServerUrl;
+        var requestUri = new Uri(baseUri, "2.19.0_20220714193707/heroparam/batch");
+
+        this.LogRequestingHeroParam(requestUri.AbsoluteUri);
+
+        var response = await this.pluginHost.HttpClient.PostAsJsonAsync(
+            requestUri.AbsoluteUri,
+            heroParamRequest,
+            JsonOptions
+        );
+
+        if (!response.IsSuccessStatusCode)
+        {
+            this.LogHeroParamRequestFailed(response.StatusCode);
+            return;
+        }
+
+        var responseObject = await response.Content.ReadFromJsonAsync<List<HeroParamData>>() ?? [];
+
+        this.LogReceivedHeroParam(responseObject);
+
+        foreach (var data in responseObject)
+        {
+            this.heroParamStorage[data.ActorNr] = new HeroParamState(data);
+        }
+    }
+
+    /// <summary>
+    /// Raises the <see cref="Event.Party"/> event.
+    /// </summary>
+    private void RaisePartyEvent()
+    {
+        Dictionary<int, int> memberCountTable = this.GetMemberCountTable();
+
+        foreach (HeroParamState state in this.heroParamStorage.Values)
+        {
+            state.UsedMemberCount = memberCountTable[state.ActorNr];
+        }
+
+        int questId = this.pluginHost.GetQuestId();
+        int rankingType = QuestHelper.GetIsRanked(questId) ? 1 : 0;
+
+        var evt = new PartyEvent()
+        {
+            MemberCountTable = memberCountTable,
+            ReBattleCount = this.pluginConfiguration.ReplayTimeoutSeconds,
+            RankingType = rankingType,
+        };
+
+        this.pluginHost.RaiseEvent(Event.Party, evt);
+    }
+
+    /// <summary>
+    /// Gets how many units each actor should control based on the number of ingame players.
+    /// </summary>
+    /// <returns>A dictionary of { [actorNr] = unitCount }</returns>
+    private Dictionary<int, int> GetMemberCountTable()
+    {
+        bool isRaid =
+            this.pluginHost.GameProperties.TryGetInt(GamePropertyKeys.QuestId, out int questId)
+            && QuestHelper.GetIsRaid(questId);
+
+        if (isRaid || this.pluginHost.GetIsSoloPlay())
+        {
+            // Use all available units
+            return this.heroParamStorage.ToDictionary(
+                x => x.Value.ActorNr,
+                x => x.Value.HeroParamCount
+            );
+        }
+
+        return MemberCountHelper.BuildMemberCountTable(
+            this.heroParamStorage.Select(x => new ValueTuple<int, int>(
+                    x.Value.ActorNr,
+                    x.Value.HeroParamCount
+                ))
+                .ToList()
+        );
+    }
+
+    /// <summary>
+    /// Raise <see cref="Event.CharacterData"/> using cached <see cref="HeroParamData"/>.
+    /// </summary>
+    private void RaiseCharacterDataEvent()
+    {
+        foreach (KeyValuePair<int, HeroParamState> kvp in this.heroParamStorage)
+        {
+            int actorNr = kvp.Key;
+            HeroParamState state = kvp.Value;
+
+            foreach (List<HeroParam> heroParams in state.Data.HeroParamLists)
+            {
+                var evt = new CharacterData()
+                {
+                    PlayerId = actorNr,
+                    HeroParamExs = heroParams
+                        .Select(x => new HeroParamExData()
+                        {
+                            LimitOverCount = x.ExAbilityLv,
+                            SequenceNumber = x.Position,
+                        })
+                        .ToArray(),
+                    HeroParams = heroParams.Take(state.UsedMemberCount).ToArray(),
+                };
+
+                this.pluginHost.RaiseEvent(Event.CharacterData, evt);
+            }
+        }
+    }
+
     [LoggerMessage(LogLevel.Information, "Received GoToIngameState {Value} from actor {ActorNr}")]
     partial void LogReceivedGoToIngameState(int value, int actorNr);
 
@@ -136,4 +266,13 @@ internal sealed partial class GoToIngameStateManager
         "OnSetGoToIngameState: updating with value {MinGoToIngameState}"
     )]
     partial void LogUpdatingMinState(int minGoToIngameState);
+
+    [LoggerMessage(LogLevel.Debug, "Requesting HeroParam from URL {URL}")]
+    partial void LogRequestingHeroParam(string url);
+
+    [LoggerMessage(LogLevel.Error, "HeroParam request failed with status {Status}")]
+    partial void LogHeroParamRequestFailed(HttpStatusCode status);
+
+    [LoggerMessage(LogLevel.Debug, "Received HeroParam: {@HeroParam}")]
+    partial void LogReceivedHeroParam(List<HeroParamData> heroParam);
 }

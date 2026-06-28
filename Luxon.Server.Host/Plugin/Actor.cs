@@ -6,27 +6,27 @@ using Luxon.Server.Plugin;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal sealed class Actor : IActor
+internal sealed class GameActor : IActor
 {
-    private readonly GamePeer peer;
+    public GamePeer GamePeer { get; set; }
 
-    public Actor(GamePeer peer)
+    public GameActor(GamePeer GamePeer)
     {
-        this.peer = peer;
+        this.GamePeer = GamePeer;
     }
 
-    public int ActorNr => this.peer.ActorId;
+    public int ActorNr => this.GamePeer.ActorId;
 
     public void SetProperties(IDictionary<object, object?> properties)
     {
-        this.peer.SetActorProperties(Value.FromManagedDictionary(properties));
+        this.GamePeer.SetActorProperties(Value.FromManagedDictionary(properties));
     }
 
     public IDictionary<object, object?> Properties
     {
         get
         {
-            var luxonTable = this.peer.GetActorProperties();
+            var luxonTable = this.GamePeer.GetActorProperties();
             if (luxonTable is not { Content: IDictionary<Value, Value> hashtable })
             {
                 throw new UnreachableException("Actor properties was not a dictionary");
