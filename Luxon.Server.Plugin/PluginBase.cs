@@ -37,4 +37,14 @@ public abstract class PluginBase : IGamePlugin
         info.Continue();
 #pragma warning restore CA1062
     }
+
+    public virtual async Task BeforeSetProperties(
+        IBeforeSetPropertiesCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+#pragma warning disable CA1062
+        info.Continue();
+#pragma warning restore CA1062
+    }
 }

@@ -6,9 +6,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.Host.Plugin;
 
-internal sealed class PluginHost(Game game) : IPluginHost
+internal sealed class PluginHost : IPluginHost
 {
-    public string GameId => game.Id;
+    private readonly Game game;
+
+    public PluginHost(Game game)
+    {
+        this.game = game;
+    }
+
+    public string GameId => this.game.Id;
 
     public List<Actor> GameActorsInternal { get; } = [];
 
@@ -38,9 +45,9 @@ internal sealed class PluginHost(Game game) : IPluginHost
             sendParameters.ChannelId,
             interestGroup
         );
-        evt.SetData(MakeLuxonDictionary(data));
+        evt.SetData(Value.FromManagedDictionary(data));
 
-        game.BroadcastEvent(evt);
+        this.game.BroadcastEvent(evt);
     }
 
     public void BroadcastEvent(
@@ -62,23 +69,43 @@ internal sealed class PluginHost(Game game) : IPluginHost
             sendParameters.ChannelId,
             interestGroupAllUsers
         );
-        evt.SetData(MakeLuxonDictionary(data));
+        evt.SetData(Value.FromManagedDictionary(data));
 
-        game.BroadcastEvent(evt);
+        this.game.BroadcastEvent(evt);
+    }
+
+    public bool SetProperties(
+        int actorNr,
+        Dictionary<object, object?> data,
+        Dictionary<object, object?>? expected,
+        bool broadcast
+    )
+    {
+        if (expected != null)
+        {
+            throw new NotSupportedException(
+                "Check-and-swap is not yet supported in SetProperties. Set expected to null to proceed."
+            );
+        }
+
+        if (actorNr == 0)
+        {
+            this.game.InsertGameProperties(Value.FromManagedDictionary(data));
+            return true;
+        }
+
+        Actor? actor = this.GameActorsInternal.Find((a) => a.ActorNr == actorNr);
+        if (actor == null)
+        {
+            throw new ArgumentException($"Actor {actorNr} not found.", nameof(actorNr));
+        }
+
+        actor.SetProperties(data);
+        return true;
     }
 
     public ILogger<T> CreateLogger<T>()
     {
         return LoggerConfiguration.Factory.CreateLogger<T>();
-    }
-
-    private static Value MakeLuxonDictionary(IDictionary<byte, object?> managedDictionary)
-    {
-        var dict = managedDictionary.ToDictionary(
-            x => Value.FromManaged(x.Key),
-            x => Value.FromManaged(x.Value)
-        );
-
-        return Value.FromManaged(dict);
     }
 }

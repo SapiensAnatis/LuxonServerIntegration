@@ -10,6 +10,11 @@ internal static class ValueExtensions
         {
             return new Value(GetTypeTag(managedValue), managedValue);
         }
+
+        public static Value FromManagedDictionary<TKey>(IDictionary<TKey, object?> dictionary)
+        {
+            return new Value(21, MakeLuxonDictionary(dictionary));
+        }
     }
 
     private static int GetTypeTag(object? value)
@@ -31,11 +36,16 @@ internal static class ValueExtensions
             return 8;
         }
 
-        if (type.IsAssignableTo(typeof(IDictionary<Value, Value>)))
-        {
-            return 21;
-        }
-
         throw new NotImplementedException();
+    }
+
+    private static Value MakeLuxonDictionary<TKey>(IDictionary<TKey, object?> managedDictionary)
+    {
+        var dict = managedDictionary.ToDictionary(
+            x => Value.FromManaged(x.Key),
+            x => Value.FromManaged(x.Value)
+        );
+
+        return Value.FromManaged(dict);
     }
 }

@@ -30,4 +30,11 @@ public interface IPluginHost
         IDictionary<byte, object?> data,
         SendParameters sendParameters = new()
     );
+
+    public bool SetProperties(
+        int actorNr,
+        Dictionary<object, object?> data,
+        Dictionary<object, object?>? expected,
+        bool broadcast
+    );
 }

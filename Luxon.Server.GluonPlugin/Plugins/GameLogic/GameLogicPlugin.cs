@@ -176,6 +176,27 @@ internal sealed partial class GameLogicPlugin : PluginBase
         }
     }
 
+    public override async Task BeforeSetProperties(
+        IBeforeSetPropertiesCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        if (
+            info.Request.Properties.TryGetValue(
+                ActorPropertyKeys.GoToIngameState,
+                out object? objValue
+            ) && objValue is int value
+        )
+        {
+            this.goToIngameStateManager.OnSetGoToIngameState(info, value);
+        }
+
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
+
     private void OnActorReady(IRaiseEventCallInfo info)
     {
         this.LogReceivedReadyEventFromActor(info.ActorNr);

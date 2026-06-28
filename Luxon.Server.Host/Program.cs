@@ -41,6 +41,7 @@ var imports = new LuxonServerImports
     GamePluginOnJoinGame = csImports.GamePluginOnJoinGame,
     GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
     GamePluginOnRaiseEvent = csImports.GamePluginOnRaiseEvent,
+    GamePluginBeforeSetProperties = csImports.GamePluginBeforeSetProperties,
 };
 
 LuxonServerRuntime.SetImports(imports);

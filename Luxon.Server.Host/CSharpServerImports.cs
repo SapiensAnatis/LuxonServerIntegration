@@ -96,7 +96,7 @@ internal sealed partial class CSharpServerImports(
         if (plugin is PluginBase { PluginHost: PluginHost concretePluginHost })
         {
             this.LogUpdatingGameActors(joiner.ActorId);
-            concretePluginHost.GameActorsInternal.Add(new Actor() { ActorNr = joiner.ActorId });
+            concretePluginHost.GameActorsInternal.Add(new Actor(joiner));
         }
 
         Message managedRequest = request.ToManagedMessage();
@@ -180,6 +180,57 @@ internal sealed partial class CSharpServerImports(
         gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
         return LuxonGamePluginResult.Continue;
+    }
+
+    public LuxonGamePluginResult GamePluginBeforeSetProperties(
+        uint pluginId,
+        Game game,
+        SerMessageRef request,
+        GamePeer setter,
+        bool broadcast,
+        int targetActorId,
+        SerValueRef update,
+        SerValueRef expected
+    )
+    {
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, request);
+        }
+
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
+
+        Message managedRequest = request.ToManagedMessage();
+
+        if (managedRequest.Payload is not OperationRequestMessage opr)
+        {
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
+        }
+
+        if (update.ToManagedValue() is not { Content: IDictionary<Value, Value> valueHashtable })
+        {
+            throw new InvalidOperationException("Failed to get properties hashtable");
+        }
+
+        var info = new BeforeSetPropertiesCallInfo()
+        {
+            OperationRequest = opr,
+            Request = new SetPropertiesRequest()
+            {
+                Properties = new TypelessLuxonDictionaryProxy(valueHashtable),
+                ActorNumber = targetActorId,
+            },
+            ActorNr = setter.ActorId,
+        };
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        Task pluginCallback = plugin.BeforeSetProperties(info, cts.Token);
+
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
 
     private static LuxonGamePluginResult FinishCommand(
