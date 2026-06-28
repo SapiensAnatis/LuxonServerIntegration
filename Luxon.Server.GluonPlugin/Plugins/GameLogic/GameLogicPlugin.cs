@@ -1,4 +1,5 @@
 using DragaliaAPI.Photon.Shared.Enums;
+using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.GluonPlugin.Shared.Constants;
 using Luxon.Server.GluonPlugin.Shared.Helpers;
@@ -140,6 +141,51 @@ internal sealed partial class GameLogicPlugin : PluginBase
             // );
 
             throw new NotImplementedException("Random matching is not implemented yet");
+        }
+    }
+
+    public override async Task OnRaiseEvent(
+        IRaiseEventCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        info.Continue();
+
+        this.LogEventRaised(info.ActorNr, (Event)info.Request.EvCode, info.Request.EvCode);
+
+        this.LogEventProperties(info.Request.Parameters);
+
+        switch ((Event)info.Request.EvCode)
+        {
+            case Event.Ready:
+                this.OnActorReady(info);
+                break;
+            // case Event.ClearQuestRequest:
+            //     this.OnClearQuestRequest(info);
+            //     break;
+            // case Event.GameSucceed:
+            //     this.OnGameSucceed(info);
+            //     break;
+            // case Event.FailQuestRequest:
+            //     this.OnFailQuestRequest(info);
+            //     break;
+            // case Event.Dead:
+            //     // !!! TODO: How does this behave with AI units?
+            //     this.actorState[info.ActorNr].Dead = true;
+            //     break;
+        }
+    }
+
+    private void OnActorReady(IRaiseEventCallInfo info)
+    {
+        this.LogReceivedReadyEventFromActor(info.ActorNr);
+        this.actorState[info.ActorNr].Ready = true;
+
+        if (this.actorState.All(x => x.Value.Ready))
+        {
+            // this.PluginHost.RaiseEvent(Event.StartQuest, new Dictionary<string, string>());
+
+            this.roomState.StartActorCount = this.PluginHost.GameActors.Count;
         }
     }
 

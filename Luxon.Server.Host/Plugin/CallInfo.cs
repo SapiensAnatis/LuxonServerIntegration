@@ -23,6 +23,11 @@ internal abstract class CallInfo : ICallInfo
         this.SetResult(LuxonGamePluginResult.Fail);
     }
 
+    public void Cancel()
+    {
+        this.SetResult(LuxonGamePluginResult.Cancel);
+    }
+
     [MemberNotNullWhen(true, nameof(Result))]
     public bool HasResult()
     {

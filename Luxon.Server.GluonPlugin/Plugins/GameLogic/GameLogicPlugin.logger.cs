@@ -1,3 +1,5 @@
+using Luxon.Ser;
+using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
 using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
@@ -35,8 +37,17 @@ internal partial class GameLogicPlugin
         LogLevel.Information,
         "Commencing random matching start timer for game {GameId}"
     )]
-    partial void LogCommencingRandomMatchingStartTimerForGameGameid(string gameId);
+    partial void LogCommencingRandomMatchingTimer(string gameId);
 
     [LoggerMessage(LogLevel.Information, "Executing random matching start for game {GameId}")]
-    partial void LogExecutingRandomMatchingStartForGameGameid(string gameId);
+    partial void LogExecutingRandomMatchingStart(string gameId);
+
+    [LoggerMessage(LogLevel.Debug, "Event properties: {@Parameters}")]
+    partial void LogEventProperties(Dictionary<byte, Value> parameters);
+
+    [LoggerMessage(LogLevel.Debug, "Actor {ActorNr} raised event: {EventCode} ({EventCodeHex:X})")]
+    partial void LogEventRaised(int actorNr, Event eventCode, byte eventCodeHex);
+
+    [LoggerMessage(LogLevel.Information, "Received Ready event from actor {ActorNr}")]
+    partial void LogReceivedReadyEventFromActor(int actorNr);
 }

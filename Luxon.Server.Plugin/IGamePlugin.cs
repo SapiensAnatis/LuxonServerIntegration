@@ -7,4 +7,6 @@ public interface IGamePlugin
     Task OnCreateGame(ICreateGameCallInfo info, CancellationToken cancellationToken);
 
     Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken);
+
+    Task OnRaiseEvent(IRaiseEventCallInfo info, CancellationToken cancellationToken);
 }
