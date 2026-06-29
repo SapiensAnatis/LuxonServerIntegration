@@ -289,8 +289,7 @@ internal sealed partial class CSharpServerImports(
             previousContext.ManagedMessage
         );
 
-        this.logger.LogInformation(
-            "Plugin callback set result ({TypeName}) after async suspension: {Result}",
+        this.LogPluginCallbackSetResultAsynchronously(
             previousContext.CallInfo.GetType().Name,
             result
         );
@@ -316,9 +315,9 @@ internal sealed partial class CSharpServerImports(
     {
         if (pluginCallback.IsCompletedSuccessfully)
         {
-            // The plugin callback completed synchronously.
+            // The plugin callback completed synchronously (or close enough to it).
 
-            this.LogPluginCallbackReturnedSynchronously(info.GetType().Name);
+            this.LogPluginCallbackReturnedSynchronously(info.GetType().Name, info.Result);
 
             cts.Dispose();
 
@@ -328,14 +327,10 @@ internal sealed partial class CSharpServerImports(
         if (pluginCallback.IsFaulted)
         {
             // The task faulted synchronously.
-            if (pluginCallback is { Exception.InnerException: { } singleException })
-            {
-                ExceptionDispatchInfo.Capture(singleException).Throw();
-            }
-            else
-            {
-                throw pluginCallback.Exception;
-            }
+            // Use ExceptionDispatchInfo so that CSharpServerImports does not appear in the stack trace.
+            ExceptionDispatchInfo
+                .Capture(pluginCallback.Exception.InnerException ?? pluginCallback.Exception)
+                .Throw();
         }
 
         if (info.HasResult())
@@ -467,18 +462,30 @@ internal sealed partial class CSharpServerImports(
     [LoggerMessage(LogLevel.Debug, "Detected previous command context")]
     partial void DetectedPreviousContext();
 
-    [LoggerMessage(LogLevel.Debug, "Plugin callback set result ({InfoTypeName}) synchronously")]
-    partial void LogPluginCallbackReturnedSynchronously(string infoTypeName);
+    [LoggerMessage(
+        LogLevel.Debug,
+        "Plugin callback set result ({InfoTypeName}) synchronously: {Result}"
+    )]
+    partial void LogPluginCallbackReturnedSynchronously(
+        string infoTypeName,
+        LuxonGamePluginResult? result
+    );
 
     [LoggerMessage(LogLevel.Debug, "Plugin suspended without setting result")]
     partial void LogPluginSuspendedWithoutSettingResult();
 
-    [LoggerMessage(
-        LogLevel.Information,
-        "Suspended command and set up callbacks - returning Continue"
-    )]
+    [LoggerMessage(LogLevel.Debug, "Suspended command and set up callbacks - returning Continue")]
     partial void LogSuspendedCommand();
 
     [LoggerMessage(LogLevel.Debug, "Event raised: 0x{evt:}X")]
     partial void LogEventRaised(byte evt);
+
+    [LoggerMessage(
+        LogLevel.Debug,
+        "Plugin callback set result ({TypeName}) after async suspension: {Result}"
+    )]
+    partial void LogPluginCallbackSetResultAsynchronously(
+        string typeName,
+        LuxonGamePluginResult result
+    );
 }

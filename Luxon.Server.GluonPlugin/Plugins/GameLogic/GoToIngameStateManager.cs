@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
 using DragaliaAPI.Photon.Shared.Models;
 using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
@@ -18,7 +17,7 @@ internal sealed partial class GoToIngameStateManager
     private static readonly MessagePackSerializerOptions MessagePackOptions =
         MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4Block);
 
-    private static readonly JsonSerializerOptions JsonOptions = new JsonSerializerOptions()
+    private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
@@ -45,7 +44,11 @@ internal sealed partial class GoToIngameStateManager
         this.logger = this.pluginHost.CreateLogger<GoToIngameStateManager>();
     }
 
-    public async Task OnSetGoToIngameState(IBeforeSetPropertiesCallInfo info, int value)
+    public async Task OnSetGoToIngameState(
+        IBeforeSetPropertiesCallInfo info,
+        int value,
+        CancellationToken cancellationToken
+    )
     {
         int minValue = this
             .pluginHost.GameActors.Where(x => x.ActorNr != info.ActorNr) // Exclude the value which we are in the BeforeSet handler for
@@ -60,12 +63,12 @@ internal sealed partial class GoToIngameStateManager
         if (minValue > this.MinGoToIngameState)
         {
             this.MinGoToIngameState = minValue;
-            await this.OnMinStateChange(info);
+            await this.OnMinStateChange(cancellationToken);
         }
         else if (value == 1 && info.ActorNr == 1)
         {
             this.MinGoToIngameState = 1;
-            await this.OnMinStateChange(info);
+            await this.OnMinStateChange(cancellationToken);
         }
         else if (value == 0 && this.pluginHost.GetIsSoloPlay())
         {
@@ -81,8 +84,7 @@ internal sealed partial class GoToIngameStateManager
     /// <remarks>
     /// Represents various stages of loading into a quest, during which events/properties need to be raised/set.
     /// </remarks>
-    /// <param name="info">Call info.</param>
-    private async Task OnMinStateChange(ICallInfo info)
+    private async Task OnMinStateChange(CancellationToken cancellationToken)
     {
         this.LogUpdatingMinState(this.MinGoToIngameState);
 
@@ -92,7 +94,7 @@ internal sealed partial class GoToIngameStateManager
                 this.SetGoToIngameInfo();
                 break;
             case 2:
-                await this.RequestHeroParam(info);
+                await this.RequestHeroParam(cancellationToken);
                 break;
             case 3:
                 this.RaisePartyEvent();
@@ -129,8 +131,7 @@ internal sealed partial class GoToIngameStateManager
     /// <summary>
     /// Makes an outgoing request for <see cref="HeroParamData"/> for each player in the room.
     /// </summary>
-    /// <param name="info">Call info.</param>
-    private async Task RequestHeroParam(ICallInfo info)
+    private async Task RequestHeroParam(CancellationToken cancellationToken)
     {
         var heroParamRequest = this
             .pluginHost.GameActors.Select(x => new ActorInfo()
@@ -150,7 +151,8 @@ internal sealed partial class GoToIngameStateManager
         var response = await this.pluginHost.HttpClient.PostAsJsonAsync(
             requestUri.AbsoluteUri,
             heroParamRequest,
-            JsonOptions
+            JsonOptions,
+            cancellationToken
         );
 
         if (!response.IsSuccessStatusCode)
@@ -159,7 +161,8 @@ internal sealed partial class GoToIngameStateManager
             return;
         }
 
-        var responseObject = await response.Content.ReadFromJsonAsync<List<HeroParamData>>() ?? [];
+        var responseObject =
+            await response.Content.ReadFromJsonAsync<List<HeroParamData>>(cancellationToken) ?? [];
 
         this.LogReceivedHeroParam(responseObject);
 
