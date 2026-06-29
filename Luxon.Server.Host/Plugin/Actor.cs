@@ -8,52 +8,28 @@ namespace Luxon.Server.Host.Plugin;
 
 internal sealed class Actor : IActor
 {
-    private Game game;
-    private bool gamePeerStale;
-
-    private GamePeer GamePeer
-    {
-        get
-        {
-            if (this.gamePeerStale)
-            {
-                field =
-                    this.game.FindPeerByActorId(this.ActorNr)
-                    ?? throw new InvalidOperationException($"Actor {this.ActorNr} not found");
-
-                this.gamePeerStale = false;
-            }
-
-            return field;
-        }
-        init;
-    }
+    private readonly Game game;
+    private readonly GamePeer gamePeer;
 
     public Actor(Game game, GamePeer gamePeer)
     {
         this.game = game;
-        this.GamePeer = gamePeer;
+        this.gamePeer = gamePeer;
         this.ActorNr = gamePeer.ActorId;
-        this.gamePeerStale = false;
     }
 
     public int ActorNr { get; set; }
 
     public void SetProperties(IDictionary<object, object?> properties)
     {
-        this.GamePeer.SetActorProperties(Value.FromManagedHashtable(properties));
-    }
-
-    public void InvalidateGamePeer()
-    {
-        this.gamePeerStale = true;
+        this.gamePeer.SetActorProperties(Value.FromManagedHashtable(properties));
     }
 
     public IDictionary<object, object?> Properties
     {
         get
         {
-            var luxonTable = this.GamePeer.GetActorProperties();
+            var luxonTable = this.gamePeer.GetActorProperties();
             if (luxonTable is not { Content: IDictionary<Value, Value> hashtable })
             {
                 throw new UnreachableException("Actor properties was not a dictionary");

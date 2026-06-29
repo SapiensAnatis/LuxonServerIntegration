@@ -18,9 +18,23 @@ internal sealed class PluginHost : IPluginHost
 
     public string GameId => this.game.Id;
 
-    public List<IActor> GameActorsInternal { get; } = [];
+    public IReadOnlyList<IActor> GameActors
+    {
+        get
+        {
+            // TODO: this breaks if users leave the game
+            List<IActor> actors = [];
+            for (nuint i = 1; i <= this.game.PeerCount; i++)
+            {
+                if (this.game.FindPeerByActorId((int)i) is { } peer)
+                {
+                    actors.Add(new Actor(this.game, peer));
+                }
+            }
 
-    public IReadOnlyList<IActor> GameActors => this.GameActorsInternal.AsReadOnly();
+            return actors;
+        }
+    }
 
     public ILogger<IPluginHost> Logger { get; } =
         LoggerConfiguration.Factory.CreateLogger<IPluginHost>();
@@ -97,7 +111,7 @@ internal sealed class PluginHost : IPluginHost
             return true;
         }
 
-        IActor? actor = this.GameActorsInternal.Find((a) => a.ActorNr == actorNr);
+        IActor? actor = this.GameActors.FirstOrDefault((a) => a.ActorNr == actorNr);
         if (actor == null)
         {
             throw new ArgumentException($"Actor {actorNr} not found.", nameof(actorNr));
