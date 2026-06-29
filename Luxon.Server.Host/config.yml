@@ -1,0 +1,44 @@
+# Servers
+
+Servers:
+  NameServer:
+    - port: 5058
+      # Change this to the IP address that your phone/emulator should use to contact the Photon server (this is my PC's LAN IP address)
+      external_address: 192.168.0.65:5058
+
+    - port: 27000
+      external_address: 192.168.0.65:27000
+
+  MasterServer:
+    - port: 5055
+      external_address: 192.168.0.65:5055
+
+    - port: 27001
+      external_address: 192.168.0.65:27001
+
+  GameServer:
+    - port: 5056
+      external_address: 192.168.0.65:5056
+
+    - port: 27002
+      external_address: 192.168.0.65:27002
+
+
+# Misc settings
+
+EnableIPv6: false
+MaxConnections: 20
+MaxGamePeers: 0
+TickTimeBudget: 2000
+
+
+# Settings database
+# Requires LUXON_SERVER_ENABLE_SETTINGS_DATABASE
+#SettingsDatabase: settings.sqlite3
+
+
+# Web interface and API
+# Requires LUXON_SERVER_ENABLE_WEBSERVER
+
+HTTP:
+  enabled: false

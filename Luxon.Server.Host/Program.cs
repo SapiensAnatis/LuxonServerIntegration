@@ -24,13 +24,9 @@ pluginManager.LoadPluginsFromConfig();
 
 var gameManager = new GameManager();
 
-using var config = ServerManagerConfig.Create();
-
-config
-    .AddServerAndEndpoint(LuxonServerType.MasterServer, 5055, "192.168.0.65:5055")
-    .AddServerAndEndpoint(LuxonServerType.GameServer, 5056, "192.168.0.65:5056");
-
-using var serverManager = ServerManager.CreateFromConfig(config);
+using var serverManager = ServerManager.CreateFromFile(
+    Path.Join(AppContext.BaseDirectory, "config.yml")
+);
 
 var csImports = new CSharpServerImports(serverManager, pluginManager, gameManager);
 
@@ -47,8 +43,6 @@ var imports = new LuxonServerImports
 LuxonServerRuntime.SetImports(imports);
 
 LuxonServerRuntime.UnhandledCallbackException += OnUnhandledPluginException;
-
-// Reading the config from YAML doesn't appear to start any servers. I might be doing something wrong!
 
 while (serverManager.RunOnce())
 {

@@ -31,4 +31,10 @@
     <Folder Include="Constants\" />
     <Folder Include="Imports\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <None Update="config.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
 </Project>
