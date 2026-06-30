@@ -1,9 +1,11 @@
+using System.Net.Http.Json;
 using DragaliaAPI.Photon.Shared.Enums;
 using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.GluonPlugin.Shared.Constants;
 using Luxon.Server.GluonPlugin.Shared.Helpers;
 using Luxon.Server.Plugin;
+using MessagePack;
 using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
@@ -11,12 +13,16 @@ namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 internal sealed partial class GameLogicPlugin : PluginBase
 {
     private RoomState roomState;
-    private ILogger<GameLogicPlugin> logger;
-    private GoToIngameStateManager goToIngameStateManager;
-
     private readonly PluginConfiguration configuration;
     private readonly PluginStateService pluginStateService;
     private readonly Dictionary<int, ActorState> actorState;
+
+    private GoToIngameStateManager goToIngameStateManager;
+
+    private readonly Uri dungeonRecordUri;
+    private readonly Uri timeAttackRecordUri;
+
+    private readonly ILogger<GameLogicPlugin> logger;
 
     public GameLogicPlugin(
         IPluginHost host,
@@ -25,20 +31,27 @@ internal sealed partial class GameLogicPlugin : PluginBase
     )
         : base(host)
     {
+        this.roomState = new RoomState();
+        this.actorState = new Dictionary<int, ActorState>();
         this.configuration = configuration;
         this.pluginStateService = pluginStateService;
-
-        this.actorState = new Dictionary<int, ActorState>();
-
-        this.logger = host.CreateLogger<GameLogicPlugin>();
-
-        this.roomState = new RoomState();
 
         this.goToIngameStateManager = new GoToIngameStateManager(
             host,
             this.pluginStateService,
             this.configuration
         );
+
+        this.dungeonRecordUri = new Uri(
+            configuration.ApiServerUrl,
+            configuration.DungeonRecordMultiEndpoint
+        );
+        this.timeAttackRecordUri = new Uri(
+            configuration.ApiServerUrl,
+            configuration.TimeAttackEndpoint
+        );
+
+        this.logger = host.CreateLogger<GameLogicPlugin>();
     }
 
     public override async Task OnCreateGame(
@@ -160,19 +173,19 @@ internal sealed partial class GameLogicPlugin : PluginBase
             case Event.Ready:
                 this.OnActorReady(info);
                 break;
-            // case Event.ClearQuestRequest:
-            //     this.OnClearQuestRequest(info);
-            //     break;
-            // case Event.GameSucceed:
-            //     this.OnGameSucceed(info);
-            //     break;
-            // case Event.FailQuestRequest:
-            //     this.OnFailQuestRequest(info);
-            //     break;
-            // case Event.Dead:
-            //     // !!! TODO: How does this behave with AI units?
-            //     this.actorState[info.ActorNr].Dead = true;
-            //     break;
+            case Event.ClearQuestRequest:
+                await this.OnClearQuestRequest(info, cancellationToken);
+                break;
+            case Event.GameSucceed:
+                this.OnGameSucceed(info);
+                break;
+            case Event.FailQuestRequest:
+                this.OnFailQuestRequest(info);
+                break;
+            case Event.Dead:
+                // !!! TODO: How does this behave with AI units?
+                this.actorState[info.ActorNr].Dead = true;
+                break;
         }
     }
 
@@ -208,6 +221,206 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
             this.roomState.StartActorCount = this.PluginHost.GameActors.Count;
         }
+    }
+
+    /// <summary>
+    /// Handler for when the client raises <see cref="Event.ClearQuestRequest"/>.
+    /// </summary>
+    /// <param name="info">Event call info.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    private async Task OnClearQuestRequest(
+        IRaiseEventCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        // These properties must be set for the client to successfully rejoin the room.
+        int roomId = this.PluginHost.GameProperties.GetInt(GamePropertyKeys.RoomId);
+
+        if (roomId > 0)
+        {
+            this.PluginHost.SetProperties(
+                0,
+                new Dictionary<object, object?>()
+                {
+                    { GamePropertyKeys.GoToIngameInfo, null },
+                    { GamePropertyKeys.RoomId, -GenerateRoomId() },
+                },
+                null,
+                true
+            );
+        }
+
+        this.actorState[info.ActorNr] = new ActorState();
+
+        byte[] augmentedRequest = this.AugmentQuestClearRequest(
+            info.DeserializeEvent<ClearQuestRequest>().RecordMultiRequest,
+            info.ActorNr
+        );
+
+        var dungeonRecordTask = this.PluginHost.HttpClient.PostAsJsonAsync(
+            this.dungeonRecordUri,
+            augmentedRequest,
+            cancellationToken
+        );
+
+        if (this.ShouldRegisterTimeAttack())
+        {
+            this.LogRegisteringTimeAttackClear();
+
+            var timeAttackResponse = await this.PluginHost.HttpClient.PostAsJsonAsync(
+                this.timeAttackRecordUri,
+                augmentedRequest,
+                cancellationToken
+            );
+
+            if (!timeAttackResponse.IsSuccessStatusCode)
+            {
+                this.LogTimeAttackRecordRequestFailed(timeAttackResponse.StatusCode);
+            }
+        }
+
+        var dungeonResponse = await dungeonRecordTask;
+
+        dungeonResponse.EnsureSuccessStatusCode();
+
+        this.PluginHost.RaiseMsgpackEvent(
+            Event.ClearQuestResponse,
+            new ClearQuestResponse()
+            {
+                RecordMultiResponse = await dungeonResponse.Content.ReadAsByteArrayAsync(
+                    cancellationToken
+                ),
+            },
+            info.ActorNr
+        );
+    }
+
+    /// <summary>
+    /// Handler for when a client calls <see cref="Event.GameSucceed"/>.
+    /// </summary>
+    /// <param name="info">Info from <see cref="OnRaiseEvent(IRaiseEventCallInfo,CancellationToken)"/>.</param>
+    private void OnGameSucceed(IRaiseEventCallInfo info)
+    {
+        this.LogReceivedGameSucceed(info.ActorNr);
+
+        if (info.ActorNr == 1)
+        {
+            this.roomState = new RoomState(this.roomState);
+            this.goToIngameStateManager = new GoToIngameStateManager(
+                this.PluginHost,
+                this.pluginStateService,
+                this.configuration
+            );
+
+            this.PluginHost.RaiseMsgpackEvent(Event.GameSucceed, new { });
+            this.PluginHost.SetProperties(
+                0,
+                new Dictionary<object, object?>() { [GamePropertyKeys.RoomId] = GenerateRoomId() },
+                null,
+                true
+            );
+        }
+    }
+
+    /// <summary>
+    /// Handler for when the client calls <see cref="Event.FailQuestRequest"/>.
+    /// </summary>
+    /// <param name="info">Event call info.</param>
+    private void OnFailQuestRequest(IRaiseEventCallInfo info)
+    {
+        this.actorState[info.ActorNr].Ready = false;
+
+        this.PluginHost.SetProperties(
+            info.ActorNr,
+            new Dictionary<object, object?>() { { ActorPropertyKeys.GoToIngameState, 0 } },
+            null,
+            false
+        );
+
+        FailQuestRequest request = info.DeserializeEvent<FailQuestRequest>();
+
+        this.LogReceivedFailQuestRequest(request.FailType);
+
+        FailQuestResponse response = new FailQuestResponse()
+        {
+            ResultType =
+                request.FailType == FailQuestRequest.FailTypes.Timeup
+                    ? FailQuestResponse.ResultTypes.Timeup
+                    : FailQuestResponse.ResultTypes.Clear,
+        };
+
+        this.PluginHost.RaiseMsgpackEvent(Event.FailQuestResponse, response, info.ActorNr);
+
+        if (
+            this.PluginHost.GameActors.Count < this.roomState.StartActorCount
+            || this.actorState.All(x => x.Value.Dead)
+        )
+        {
+            // Return to lobby
+            this.LogFailQuestReturningToLobby();
+            this.actorState[info.ActorNr] = new ActorState();
+
+            this.PluginHost.SetProperties(
+                0,
+                new Dictionary<object, object?>()
+                {
+                    { GamePropertyKeys.GoToIngameInfo, null },
+                    { GamePropertyKeys.RoomId, -1 },
+                },
+                null,
+                true
+            );
+        }
+
+        this.roomState = new RoomState(this.roomState);
+        this.goToIngameStateManager = new GoToIngameStateManager(
+            this.PluginHost,
+            this.pluginStateService,
+            this.configuration
+        );
+    }
+
+    private byte[] AugmentQuestClearRequest(byte[] original, int actorNr)
+    {
+        Dictionary<string, object?> deserialized = MessagePackSerializer.Deserialize<
+            Dictionary<string, object?>
+        >(original);
+
+        deserialized["connecting_viewer_id_list"] = this
+            .PluginHost.GameActors.Where(x => x.ActorNr != actorNr)
+            .OrderBy(x => x.ActorNr)
+            .Select(x => x.GetViewerId())
+            .ToArray();
+
+        deserialized["is_host"] = actorNr == 1;
+
+        deserialized["member_count"] = this.goToIngameStateManager.GetUsedMemberCount(actorNr);
+
+        IActor actor = this.PluginHost.GameActors.First(x => x.ActorNr == actorNr);
+
+        if (actor.Properties.TryGetInt(ActorPropertyKeys.AstralBetCount, out int astralBetCount))
+        {
+            deserialized["astral_bet_count"] = astralBetCount;
+        }
+
+        return MessagePackSerializer.Serialize(deserialized);
+    }
+
+    private bool ShouldRegisterTimeAttack()
+    {
+        if (!QuestHelper.GetIsRanked(this.roomState.QuestId))
+        {
+            this.LogNotRegisteringTaClear(this.roomState.QuestId);
+            return false;
+        }
+
+        if (!this.roomState.IsSoloPlay && this.PluginHost.GameActors.Count < 4)
+        {
+            this.LogNotRegisteringNonFullTaClear(this.PluginHost.GameActors.Count);
+            return false;
+        }
+
+        return true;
     }
 
 #pragma warning disable CA5394 // Do not use insecure randomness. This value is not security-sensitive.

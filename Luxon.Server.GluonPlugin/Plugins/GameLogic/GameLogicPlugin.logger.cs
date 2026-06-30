@@ -1,3 +1,4 @@
+using System.Net;
 using Luxon.Ser;
 using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
 using Microsoft.Extensions.Logging;
@@ -50,4 +51,31 @@ internal partial class GameLogicPlugin
 
     [LoggerMessage(LogLevel.Information, "Received Ready event from actor {ActorNr}")]
     partial void LogReceivedReadyEventFromActor(int actorNr);
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Not registering TA clear -- quest {QuestId} is not ranked"
+    )]
+    partial void LogNotRegisteringTaClear(int questId);
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Not registering TA clear -- game actor count {GameActorCount} < 4"
+    )]
+    partial void LogNotRegisteringNonFullTaClear(int gameActorCount);
+
+    [LoggerMessage(LogLevel.Information, "Registering time attack clear")]
+    partial void LogRegisteringTimeAttackClear();
+
+    [LoggerMessage(LogLevel.Information, "Received GameSucceed from actor {ActorNr}")]
+    partial void LogReceivedGameSucceed(int actorNr);
+
+    [LoggerMessage(LogLevel.Debug, "Received FailQuestRequest with FailType {FailType}")]
+    partial void LogReceivedFailQuestRequest(FailQuestRequest.FailTypes failType);
+
+    [LoggerMessage(LogLevel.Error, "Time attack record request failed with status {Status}")]
+    partial void LogTimeAttackRecordRequestFailed(HttpStatusCode status);
+
+    [LoggerMessage(LogLevel.Debug, "FailQuestRequest: returning to lobby")]
+    partial void LogFailQuestReturningToLobby();
 }
