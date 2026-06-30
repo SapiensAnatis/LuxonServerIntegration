@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Luxon.Server.GluonPlugin.Shared;
 
 /// <summary>

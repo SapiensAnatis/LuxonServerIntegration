@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Luxon.Server.Host.Plugin;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
@@ -12,21 +13,17 @@ internal sealed class PluginManager : IDisposable
 {
     private readonly IConfigurationRoot pluginConfiguration;
     private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap;
-    private readonly HttpClient httpClient;
+    private readonly SocketsHttpHandler httpHandler;
 
     public PluginManager(IConfigurationRoot pluginConfiguration)
     {
         this.pluginConfiguration = pluginConfiguration;
         this.pluginIdToPluginMap = [];
 
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by HttpClient.
-        var handler = new SocketsHttpHandler()
+        this.httpHandler = new SocketsHttpHandler()
         {
             PooledConnectionLifetime = TimeSpan.FromMinutes(5),
         };
-#pragma warning restore CA2000
-
-        this.httpClient = new HttpClient(handler);
     }
 
     public void LoadPluginsFromConfig()
@@ -93,7 +90,7 @@ internal sealed class PluginManager : IDisposable
             return false;
         }
 
-        PluginHost host = new(game, this.httpClient);
+        PluginHost host = new(game, new HttpClient(this.httpHandler));
 
         plugin = pluginDetails.Factory.Create(
             host,
@@ -113,6 +110,6 @@ internal sealed class PluginManager : IDisposable
 
     public void Dispose()
     {
-        this.httpClient.Dispose();
+        this.httpHandler.Dispose();
     }
 }

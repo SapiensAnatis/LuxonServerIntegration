@@ -148,23 +148,18 @@ internal sealed partial class GoToIngameStateManager
             })
             .ToList();
 
-        var baseUri = this.pluginConfiguration.ApiServerUrl;
-        var requestUri = new Uri(baseUri, "2.19.0_20220714193707/heroparam/batch");
+        string relativeUri = "2.19.0_20220719103923/heroparam/batch";
 
-        this.LogRequestingHeroParam(requestUri.AbsoluteUri);
+        this.LogRequestingHeroParam(relativeUri);
 
         var response = await this.pluginHost.HttpClient.PostAsJsonAsync(
-            requestUri.AbsoluteUri,
+            relativeUri,
             heroParamRequest,
             JsonOptions,
             cancellationToken
         );
 
-        if (!response.IsSuccessStatusCode)
-        {
-            this.LogHeroParamRequestFailed(response.StatusCode);
-            return;
-        }
+        response.EnsureSuccessStatusCode();
 
         var responseObject =
             await response.Content.ReadFromJsonAsync<List<HeroParamData>>(cancellationToken) ?? [];

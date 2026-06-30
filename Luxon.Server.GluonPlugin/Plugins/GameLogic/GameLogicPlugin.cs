@@ -19,9 +19,6 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
     private GoToIngameStateManager goToIngameStateManager;
 
-    private readonly Uri dungeonRecordUri;
-    private readonly Uri timeAttackRecordUri;
-
     private readonly ILogger<GameLogicPlugin> logger;
 
     public GameLogicPlugin(
@@ -40,15 +37,6 @@ internal sealed partial class GameLogicPlugin : PluginBase
             host,
             this.pluginStateService,
             this.configuration
-        );
-
-        this.dungeonRecordUri = new Uri(
-            configuration.ApiServerUrl,
-            configuration.DungeonRecordMultiEndpoint
-        );
-        this.timeAttackRecordUri = new Uri(
-            configuration.ApiServerUrl,
-            configuration.TimeAttackEndpoint
         );
 
         this.logger = host.CreateLogger<GameLogicPlugin>();
@@ -253,12 +241,14 @@ internal sealed partial class GameLogicPlugin : PluginBase
         this.actorState[info.ActorNr] = new ActorState();
 
         byte[] augmentedRequest = this.AugmentQuestClearRequest(
+            // tHIS IS BROKEN
             info.DeserializeEvent<ClearQuestRequest>().RecordMultiRequest,
             info.ActorNr
         );
 
+        // Don't await yet - parallelize calls with time attack
         var dungeonRecordTask = this.PluginHost.HttpClient.PostAsJsonAsync(
-            this.dungeonRecordUri,
+            this.configuration.DungeonRecordMultiEndpoint,
             augmentedRequest,
             cancellationToken
         );
@@ -268,7 +258,7 @@ internal sealed partial class GameLogicPlugin : PluginBase
             this.LogRegisteringTimeAttackClear();
 
             var timeAttackResponse = await this.PluginHost.HttpClient.PostAsJsonAsync(
-                this.timeAttackRecordUri,
+                this.configuration.TimeAttackEndpoint,
                 augmentedRequest,
                 cancellationToken
             );
@@ -341,7 +331,7 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
         this.LogReceivedFailQuestRequest(request.FailType);
 
-        FailQuestResponse response = new FailQuestResponse()
+        var response = new FailQuestResponse()
         {
             ResultType =
                 request.FailType == FailQuestRequest.FailTypes.Timeup

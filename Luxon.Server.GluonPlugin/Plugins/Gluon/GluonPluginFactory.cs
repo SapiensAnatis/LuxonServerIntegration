@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,12 @@ public partial class GluonPluginFactory : IPluginFactory
 
         var logger = gameHost.CreateLogger<GluonPluginFactory>();
         LogCreatingNewGluonPluginWithUrl(logger, configuration.ApiServerUrl);
+
+        gameHost.HttpClient.BaseAddress = configuration.ApiServerUrl;
+        gameHost.HttpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+            "Bearer",
+            configuration.BearerToken
+        );
 
         var gameLogicPlugin = new GameLogic.GameLogicPlugin(gameHost, configuration, stateService);
 
