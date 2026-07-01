@@ -38,6 +38,7 @@ var imports = new LuxonServerImports
     GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
     GamePluginOnRaiseEvent = csImports.GamePluginOnRaiseEvent,
     GamePluginBeforeSetProperties = csImports.GamePluginBeforeSetProperties,
+    GamePluginOnLeave = csImports.GamePluginOnLeave,
 };
 
 LuxonServerRuntime.SetImports(imports);

@@ -117,6 +117,10 @@ internal sealed partial class GameLogicPlugin : PluginBase
         // ReSharper disable once SimplifyLinqExpressionUseAll
         if (!this.PluginHost.GameActors.Any(x => x.ActorNr == 1))
         {
+            this.logger.LogInformation(
+                "Actor numbers: {@Nums}",
+                this.PluginHost.GameActors.Select(x => x.ActorNr)
+            );
             this.LogRejectingJoinGameHasNoHost();
 
             info.Fail();
@@ -147,6 +151,65 @@ internal sealed partial class GameLogicPlugin : PluginBase
             // );
 
             throw new NotImplementedException("Random matching is not implemented yet");
+        }
+    }
+
+    public override async Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
+    {
+        // Get actor before continuing
+        IActor? actor = this.PluginHost.GameActors.FirstOrDefault(x => x.ActorNr == info.ActorNr);
+
+        if (info.ActorNr == -1)
+        {
+            // Actor was never really in the room, server disconnect, etc.
+            return;
+        }
+
+        if (info.ActorNr == 1)
+        {
+            this.PluginHost.RaiseMsgpackEvent(
+                Event.RoomBroken,
+                new RoomBroken() { Reason = RoomBroken.RoomBrokenType.HostDisconnected }
+            );
+        }
+
+        if (!this.actorState.Remove(info.ActorNr))
+        {
+            this.LogFailedToRemoveActor(info.ActorNr, info.Reason);
+        }
+
+        // It is not critical to update the Redis state, so don't crash the room if we can't find
+        // the actor or certain properties attached to them.
+        if (actor is null)
+        {
+            this.LogFailedToFindActor(info.ActorNr);
+            return;
+        }
+
+        if (!actor.TryGetViewerId(out long viewerId))
+        {
+            this.LogFailedToAcquireViewerId(info.ActorNr);
+            return;
+        }
+
+        this.LogActorLeftGame(info.ActorNr, viewerId, this.PluginHost.GameId);
+
+        await this.goToIngameStateManager.OnActorLeave(info, cancellationToken);
+
+        if (
+            this.goToIngameStateManager.MinGoToIngameState > 0
+            && this.actorState.Where(x => x.Key != info.ActorNr).All(x => x.Value.Ready)
+        )
+        {
+            this.PluginHost.RaiseMsgpackEvent(Event.StartQuest, new Dictionary<string, string>());
+        }
+
+        if (this.actorState.Count < 2 && this.roomState.RandomMatchingStartTimer != null)
+        {
+            this.LogAbortingRandomMatchingTimer(this.PluginHost.GameId);
+
+            // this.PluginHost.StopTimer(this.roomState.RandomMatchingStartTimer);
+            this.roomState.RandomMatchingStartTimer = null;
         }
     }
 
@@ -236,7 +299,7 @@ internal sealed partial class GameLogicPlugin : PluginBase
                 new Dictionary<object, object?>()
                 {
                     { GamePropertyKeys.GoToIngameInfo, null },
-                    { GamePropertyKeys.RoomId, -GenerateRoomId() },
+                    { GamePropertyKeys.RoomId, -1 },
                 },
                 null,
                 true
@@ -271,6 +334,12 @@ internal sealed partial class GameLogicPlugin : PluginBase
             "Auth-ViewerId",
             actor.GetViewerId().ToString(CultureInfo.InvariantCulture)
         );
+        content.Headers.Add("RoomName", this.PluginHost.GameId);
+        content.Headers.Add(
+            "RoomId",
+            this.PluginHost.GameProperties.GetInt(GamePropertyKeys.RoomId)
+                .ToString(CultureInfo.InvariantCulture)
+        );
 
         var dungeonResponse = await this.PluginHost.HttpClient.PostAsync(
             this.configuration.DungeonRecordMultiEndpoint,
@@ -295,6 +364,9 @@ internal sealed partial class GameLogicPlugin : PluginBase
                 this.LogTimeAttackRecordRequestFailed(timeAttackResponse.StatusCode);
             }
         }
+
+        // We aren't getting GameSucceed - but this is raised by the host only, and we aren't setting is_host properly
+        // due to not having the state manager set up, so maybe the client is confused.
 
         this.PluginHost.RaiseMsgpackEvent(
             Event.ClearQuestResponse,
@@ -449,4 +521,30 @@ internal sealed partial class GameLogicPlugin : PluginBase
 #pragma warning disable CA5394 // Do not use insecure randomness. This value is not security-sensitive.
     private static int GenerateRoomId() => Random.Shared.Next(100_0000, 1_000_0000);
 #pragma warning restore CA5394
+    [LoggerMessage(
+        LogLevel.Warning,
+        "Failed to remove actor #{ActorNr} from actor state. Leave reason: {LeaveReason}"
+    )]
+    partial void LogFailedToRemoveActor(int actorNr, int leaveReason);
+
+    [LoggerMessage(
+        LogLevel.Warning,
+        "OnLeave: could not find actor {ActorNr} -- GameLeave request aborted"
+    )]
+    partial void LogFailedToFindActor(int actorNr);
+
+    [LoggerMessage(LogLevel.Warning, "OnLeave: failed to acquire viewer ID of actor {ActorNr}")]
+    partial void LogFailedToAcquireViewerId(int actorNr);
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Actor {ActorNr} with viewer ID {ViewerId} left game {GameId}"
+    )]
+    partial void LogActorLeftGame(int actorNr, long viewerId, string gameId);
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Aborting random matching timer of room {RoomId} because room only has 1 player"
+    )]
+    partial void LogAbortingRandomMatchingTimer(string roomId);
 }

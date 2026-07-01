@@ -278,4 +278,28 @@ internal sealed partial class GoToIngameStateManager
 
     [LoggerMessage(LogLevel.Debug, "Received HeroParam: {@HeroParam}")]
     partial void LogReceivedHeroParam(List<HeroParamData> heroParam);
+
+    public async Task OnActorLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
+    {
+        if (this.MinGoToIngameState <= 0)
+        {
+            return;
+        }
+
+        this.heroParamStorage.Remove(info.ActorNr);
+
+        int newMinGoToIngameState = this
+            .pluginHost.GameActors.Where(x => x.ActorNr != info.ActorNr)
+            .Select(x => x.Properties.GetIntOrDefault(ActorPropertyKeys.GoToIngameState))
+            .DefaultIfEmpty()
+            .Min();
+
+        if (this.MinGoToIngameState == newMinGoToIngameState)
+        {
+            return;
+        }
+
+        this.MinGoToIngameState = newMinGoToIngameState;
+        await this.OnMinStateChange(cancellationToken);
+    }
 }

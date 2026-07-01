@@ -8,6 +8,8 @@ public interface IGamePlugin
 
     Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken);
 
+    Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken);
+
     Task OnRaiseEvent(IRaiseEventCallInfo info, CancellationToken cancellationToken);
 
     Task BeforeSetProperties(

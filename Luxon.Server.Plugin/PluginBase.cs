@@ -28,6 +28,13 @@ public abstract class PluginBase : IGamePlugin
 #pragma warning restore CA1062
     }
 
+    public virtual async Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
+    {
+#pragma warning disable CA1062
+        info.Continue();
+#pragma warning restore CA1062
+    }
+
     public virtual async Task OnRaiseEvent(
         IRaiseEventCallInfo info,
         CancellationToken cancellationToken

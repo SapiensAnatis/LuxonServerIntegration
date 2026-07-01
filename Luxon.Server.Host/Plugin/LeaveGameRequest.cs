@@ -1,0 +1,11 @@
+using Luxon.Ser;
+using Luxon.Server.Plugin;
+
+namespace Luxon.Server.Host.Plugin;
+
+internal sealed class LeaveGameRequest : ILeaveGameRequest
+{
+    public required byte OperationCode { get; set; }
+
+    public required Dictionary<byte, Value> Parameters { get; set; }
+}

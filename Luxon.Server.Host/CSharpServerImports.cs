@@ -231,6 +231,49 @@ internal sealed partial class CSharpServerImports(
         return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
 
+    public LuxonGamePluginResult GamePluginOnLeave(
+        uint pluginId,
+        Game game,
+        SerMessageRef request,
+        GamePeer leaver
+    )
+    {
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, request);
+        }
+
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
+
+        Message managedRequest = request.ToManagedMessage();
+
+        if (managedRequest.Payload is not OperationRequestMessage opr)
+        {
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
+        }
+
+        var info = new LeaveGameCallInfo()
+        {
+            OperationRequest = opr,
+            Request = new LeaveGameRequest()
+            {
+                Parameters = opr.Parameters,
+                OperationCode = opr.OperationCode,
+            },
+            Reason = 0,
+            ActorNr = leaver.ActorId,
+        };
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        Task pluginCallback = plugin.OnLeave(info, cts.Token);
+
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
+    }
+
     private static LuxonGamePluginResult FinishCommand(
         CallInfo info,
         SerMessageRef request,

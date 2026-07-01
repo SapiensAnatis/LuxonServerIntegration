@@ -39,16 +39,18 @@ internal sealed class GluonPlugin(
         }
     }
 
-    // public override void OnLeave(ILeaveGameCallInfo info)
-    // {
-    //     gameLogicPlugin.OnLeave(info);
-    //     // this.stateManagerPlugin.OnLeave(info);
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         base.OnLeave(info);
-    //     }
-    // }
+    public override async Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
+    {
+        await gameLogicPlugin.OnLeave(info, cancellationToken);
+        // this.stateManagerPlugin.OnLeave(info);
+
+        if (!info.IsProcessed)
+        {
+            // Normally you should call base.OnLeave() here to allow master client handovers, but Dragalia doesn't
+            // implement this and instead nukes the room when the master client leaves.
+            info.Continue();
+        }
+    }
 
     // public override void BeforeCloseGame(IBeforeCloseGameCallInfo info)
     // {
