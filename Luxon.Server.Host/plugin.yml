@@ -5,7 +5,7 @@ Plugins:
     Type: "Luxon.Server.GluonPlugin.Plugins.Gluon.GluonPluginFactory"
     Configuration: 
       ApiServerUrl: "http://192.168.0.65"
-      DungeonRecordMultiEndpoint: "api/dungeon_record/record_multi"
-      TimeAttackEndpoint: "api/dungeon_record/record_time_attack"
+      DungeonRecordMultiEndpoint: "2.19.0_20220719103923/dungeon_record/record_multi"
+      TimeAttackEndpoint: "2.19.0_20220719103923/dungeon_record/record_time_attack"
       ReplayTimeoutSeconds: 30
       BearerToken: token123

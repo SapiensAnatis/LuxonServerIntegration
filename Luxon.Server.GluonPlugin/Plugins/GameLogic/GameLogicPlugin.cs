@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using DragaliaAPI.Photon.Shared.Enums;
 using Luxon.Server.GluonPlugin.Plugins.GameLogic.Events;
@@ -12,6 +14,9 @@ namespace Luxon.Server.GluonPlugin.Plugins.GameLogic;
 
 internal sealed partial class GameLogicPlugin : PluginBase
 {
+    private static readonly MessagePackSerializerOptions EventMessagePackOptions =
+        MessagePackSerializerOptions.Standard.WithCompression(MessagePackCompression.Lz4Block);
+
     private RoomState roomState;
     private readonly PluginConfiguration configuration;
     private readonly PluginStateService pluginStateService;
@@ -240,26 +245,48 @@ internal sealed partial class GameLogicPlugin : PluginBase
 
         this.actorState[info.ActorNr] = new ActorState();
 
-        byte[] augmentedRequest = this.AugmentQuestClearRequest(
-            // tHIS IS BROKEN
-            info.DeserializeEvent<ClearQuestRequest>().RecordMultiRequest,
+        if (info.Request.Data is not byte[] byteArray)
+        {
+            throw new InvalidOperationException(
+                "Failed to get byte array from ClearQuestRequest event"
+            );
+        }
+
+        var request = MessagePackSerializer.Deserialize<ClearQuestRequest>(
+            byteArray,
+            EventMessagePackOptions,
+            cancellationToken
+        );
+
+        var augmentedRequest = this.AugmentQuestClearRequest(
+            request.RecordMultiRequest,
             info.ActorNr
         );
 
-        // Don't await yet - parallelize calls with time attack
-        var dungeonRecordTask = this.PluginHost.HttpClient.PostAsJsonAsync(
+        IActor actor = this.PluginHost.GameActors.First(x => x.ActorNr == info.ActorNr);
+
+        using var content = new ByteArrayContent(augmentedRequest);
+        content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
+        content.Headers.Add(
+            "Auth-ViewerId",
+            actor.GetViewerId().ToString(CultureInfo.InvariantCulture)
+        );
+
+        var dungeonResponse = await this.PluginHost.HttpClient.PostAsync(
             this.configuration.DungeonRecordMultiEndpoint,
-            augmentedRequest,
+            content,
             cancellationToken
         );
+
+        dungeonResponse.EnsureSuccessStatusCode();
 
         if (this.ShouldRegisterTimeAttack())
         {
             this.LogRegisteringTimeAttackClear();
 
-            var timeAttackResponse = await this.PluginHost.HttpClient.PostAsJsonAsync(
+            var timeAttackResponse = await this.PluginHost.HttpClient.PostAsync(
                 this.configuration.TimeAttackEndpoint,
-                augmentedRequest,
+                content,
                 cancellationToken
             );
 
@@ -268,10 +295,6 @@ internal sealed partial class GameLogicPlugin : PluginBase
                 this.LogTimeAttackRecordRequestFailed(timeAttackResponse.StatusCode);
             }
         }
-
-        var dungeonResponse = await dungeonRecordTask;
-
-        dungeonResponse.EnsureSuccessStatusCode();
 
         this.PluginHost.RaiseMsgpackEvent(
             Event.ClearQuestResponse,
@@ -327,7 +350,17 @@ internal sealed partial class GameLogicPlugin : PluginBase
             false
         );
 
-        FailQuestRequest request = info.DeserializeEvent<FailQuestRequest>();
+        if (info.Request.Data is not byte[] byteArray)
+        {
+            throw new InvalidOperationException(
+                "Failed to get byte array from FailQuestRequest event"
+            );
+        }
+
+        FailQuestRequest request = MessagePackSerializer.Deserialize<FailQuestRequest>(
+            byteArray,
+            EventMessagePackOptions
+        );
 
         this.LogReceivedFailQuestRequest(request.FailType);
 

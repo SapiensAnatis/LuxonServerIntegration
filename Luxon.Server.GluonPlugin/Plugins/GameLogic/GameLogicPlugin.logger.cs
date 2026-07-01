@@ -43,10 +43,10 @@ internal partial class GameLogicPlugin
     [LoggerMessage(LogLevel.Information, "Executing random matching start for game {GameId}")]
     partial void LogExecutingRandomMatchingStart(string gameId);
 
-    [LoggerMessage(LogLevel.Debug, "Event properties: {@Parameters}")]
+    [LoggerMessage(LogLevel.Trace, "Event properties: {@Parameters}")]
     partial void LogEventProperties(Dictionary<byte, Value> parameters);
 
-    [LoggerMessage(LogLevel.Debug, "Actor {ActorNr} raised event: {EventCode} ({EventCodeHex:X})")]
+    [LoggerMessage(LogLevel.Trace, "Actor {ActorNr} raised event: {EventCode} ({EventCodeHex:X})")]
     partial void LogEventRaised(int actorNr, Event eventCode, byte eventCodeHex);
 
     [LoggerMessage(LogLevel.Information, "Received Ready event from actor {ActorNr}")]

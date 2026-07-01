@@ -153,6 +153,7 @@ internal sealed partial class CSharpServerImports(
                 EvCode = evt.RoutingMetadata.Code,
                 OperationCode = opr.OperationCode,
                 Parameters = opr.Parameters,
+                Data = evt.Data.Content,
             },
             ActorNr = raiser.ActorId,
         };
@@ -446,7 +447,7 @@ internal sealed partial class CSharpServerImports(
     partial void DetectedPreviousContext();
 
     [LoggerMessage(
-        LogLevel.Debug,
+        LogLevel.Trace,
         "Plugin callback set result ({InfoTypeName}) synchronously: {Result}"
     )]
     partial void LogPluginCallbackReturnedSynchronously(
@@ -460,7 +461,7 @@ internal sealed partial class CSharpServerImports(
     [LoggerMessage(LogLevel.Debug, "Suspended command and set up callbacks - returning Continue")]
     partial void LogSuspendedCommand();
 
-    [LoggerMessage(LogLevel.Debug, "Event raised: 0x{evt:}X")]
+    [LoggerMessage(LogLevel.Trace, "Event raised: 0x{evt:}X")]
     partial void LogEventRaised(byte evt);
 
     [LoggerMessage(

@@ -10,4 +10,6 @@ internal sealed class RaiseEventRequest : IRaiseEventRequest
     public required Dictionary<byte, Value> Parameters { get; set; }
 
     public required byte EvCode { get; set; }
+
+    public object? Data { get; set; }
 }
