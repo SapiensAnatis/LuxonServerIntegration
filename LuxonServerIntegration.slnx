@@ -13,4 +13,5 @@
   <Project Path="Luxon.Server.GluonPlugin/Luxon.Server.GluonPlugin.csproj" />
   <Project Path="Luxon.Server.Host/Luxon.Server.Host.csproj" />
   <Project Path="Luxon.Server.Plugin/Luxon.Server.Plugin.csproj" />
+  <Project Path="Luxon.Server/Luxon.Server.csproj" />
 </Solution>

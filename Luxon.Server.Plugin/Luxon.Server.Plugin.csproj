@@ -6,8 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Luxon.Server" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- TODO: We shouldn't need native libraries to build this project, maybe extract the enums etc. into Luxon.Server.Abstractions -->
+    <ProjectReference Include="..\Luxon.Server\Luxon.Server.csproj" />
   </ItemGroup>
 </Project>

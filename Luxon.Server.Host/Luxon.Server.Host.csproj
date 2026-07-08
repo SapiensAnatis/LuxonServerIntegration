@@ -4,7 +4,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Luxon.Server" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
@@ -25,6 +24,8 @@
       <!-- Don't reference this assembly at compile time, but build it before this project -->
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
+
+    <ProjectReference Include="..\Luxon.Server\Luxon.Server.csproj" />
   </ItemGroup>
 
   <ItemGroup>

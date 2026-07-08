@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest</AnalysisLevel>
+
+    <AssemblyName>Luxon.Server</AssemblyName>
+    <RootNamespace>Luxon.Server</RootNamespace>
+    <PackageId>Luxon.Server</PackageId>
+    <Description>Convenient, modern .NET wrapper around the Luxon Server FFI.</Description>
+    <Authors>Luxon Server contributors</Authors>
+    <PackageLicenseExpression>BSD-3-Clause</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="runtimes/**/*.*" Pack="true" PackagePath="runtimes/" />
+  </ItemGroup>
+</Project>
