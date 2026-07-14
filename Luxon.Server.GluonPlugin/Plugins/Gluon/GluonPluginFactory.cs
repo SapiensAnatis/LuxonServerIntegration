@@ -1,4 +1,6 @@
 using System.Net.Http.Headers;
+using Luxon.Server.GluonPlugin.Plugins.GameLogic;
+using Luxon.Server.GluonPlugin.Plugins.StateManager;
 using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
@@ -32,9 +34,10 @@ public partial class GluonPluginFactory : IPluginFactory
             configuration.BearerToken
         );
 
-        var gameLogicPlugin = new GameLogic.GameLogicPlugin(gameHost, configuration, stateService);
+        var gameLogicPlugin = new GameLogicPlugin(gameHost, configuration, stateService);
+        var stateManagerPlugin = new StateManagerPlugin(gameHost, stateService, configuration);
 
-        return new GluonPlugin(gameHost, stateService, gameLogicPlugin);
+        return new GluonPlugin(gameHost, stateService, gameLogicPlugin, stateManagerPlugin);
     }
 
     [LoggerMessage(

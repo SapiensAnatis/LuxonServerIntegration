@@ -117,10 +117,6 @@ internal sealed partial class GameLogicPlugin : PluginBase
         // ReSharper disable once SimplifyLinqExpressionUseAll
         if (!this.PluginHost.GameActors.Any(x => x.ActorNr == 1))
         {
-            this.logger.LogInformation(
-                "Actor numbers: {@Nums}",
-                this.PluginHost.GameActors.Select(x => x.ActorNr)
-            );
             this.LogRejectingJoinGameHasNoHost();
 
             info.Fail();

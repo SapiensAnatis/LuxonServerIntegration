@@ -16,4 +16,8 @@ public interface IGamePlugin
         IBeforeSetPropertiesCallInfo info,
         CancellationToken cancellationToken
     );
+
+    Task OnSetProperties(ISetPropertiesCallInfo info, CancellationToken cancellationToken);
+
+    Task OnCloseGame(ICloseGameCallInfo info, CancellationToken cancellationToken);
 }

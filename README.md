@@ -1,4 +1,4 @@
-# LuxonServerIntgeration
+# LuxonServerIntegration
 
 ## Architecture
 

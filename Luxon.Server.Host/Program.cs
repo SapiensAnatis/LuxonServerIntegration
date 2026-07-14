@@ -17,6 +17,7 @@ string pluginPath = Path.Join(AppContext.BaseDirectory, "plugin.yml");
 
 IConfigurationRoot configuration = new ConfigurationBuilder()
     .Add(new YamlConfigurationSource(pluginPath))
+    .AddEnvironmentVariables()
     .Build();
 
 using var pluginManager = new PluginManager(configuration);
@@ -38,6 +39,7 @@ var imports = new LuxonServerImports
     GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
     GamePluginOnRaiseEvent = csImports.GamePluginOnRaiseEvent,
     GamePluginBeforeSetProperties = csImports.GamePluginBeforeSetProperties,
+    GamePluginOnSetProperties = csImports.GamePluginOnSetProperties,
     GamePluginOnLeave = csImports.GamePluginOnLeave,
 };
 
@@ -106,7 +108,7 @@ void OnUnhandledPluginException(Exception exception)
             ? singleException
             : exception;
 
-    LogUnhandledExceptionInPluginCallback(logger, exception);
+    LogUnhandledExceptionInPluginCallback(logger, displayException);
 }
 
 partial class Program

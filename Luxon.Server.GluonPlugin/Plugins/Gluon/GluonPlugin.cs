@@ -1,21 +1,35 @@
-﻿using Luxon.Server.GluonPlugin.Shared;
+﻿using Luxon.Server.GluonPlugin.Plugins.GameLogic;
+using Luxon.Server.GluonPlugin.Plugins.StateManager;
+using Luxon.Server.GluonPlugin.Shared;
 using Luxon.Server.Plugin;
 
 namespace Luxon.Server.GluonPlugin.Plugins.Gluon;
 
-internal sealed class GluonPlugin(
-    IPluginHost host,
-    PluginStateService pluginStateService,
-    GameLogic.GameLogicPlugin gameLogicPlugin
-) : PluginBase(host)
+internal sealed class GluonPlugin : PluginBase
 {
+    private readonly GameLogicPlugin gameLogicPlugin;
+    private readonly StateManagerPlugin stateManagerPlugin;
+
+    public GluonPlugin(
+        IPluginHost host,
+        PluginStateService pluginStateService,
+        GameLogicPlugin gameLogicPlugin,
+        StateManagerPlugin stateManagerPlugin
+    )
+        : base(host)
+    {
+        this.gameLogicPlugin = gameLogicPlugin;
+        this.stateManagerPlugin = stateManagerPlugin;
+    }
+
     public override async Task OnCreateGame(
         ICreateGameCallInfo info,
         CancellationToken cancellationToken
     )
     {
-        await gameLogicPlugin.OnCreateGame(info, cancellationToken);
-        // this.stateManagerPlugin.OnCreateGame(info);
+        await this.gameLogicPlugin.OnCreateGame(info, cancellationToken);
+        await this.stateManagerPlugin.OnCreateGame(info, cancellationToken);
+
         //
         // if (pluginStateService.IsPubliclyVisible)
         // {
@@ -30,8 +44,8 @@ internal sealed class GluonPlugin(
 
     public override async Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken)
     {
-        await gameLogicPlugin.OnJoin(info, cancellationToken);
-        // this.stateManagerPlugin.OnJoin(info);
+        await this.gameLogicPlugin.OnJoin(info, cancellationToken);
+        await this.stateManagerPlugin.OnJoin(info, cancellationToken);
 
         if (!info.IsProcessed)
         {
@@ -41,8 +55,8 @@ internal sealed class GluonPlugin(
 
     public override async Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
     {
-        await gameLogicPlugin.OnLeave(info, cancellationToken);
-        // this.stateManagerPlugin.OnLeave(info);
+        await this.gameLogicPlugin.OnLeave(info, cancellationToken);
+        await this.stateManagerPlugin.OnLeave(info, cancellationToken);
 
         if (!info.IsProcessed)
         {
@@ -68,23 +82,26 @@ internal sealed class GluonPlugin(
     //     }
     // }
 
-    // public override void OnCloseGame(ICloseGameCallInfo info)
-    // {
-    //     // GameLogicPlugin has no override for closing a game
-    //     // this.stateManagerPlugin.OnCloseGame(info);
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         info.Continue();
-    //     }
-    // }
+    public override async Task OnCloseGame(
+        ICloseGameCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        // GameLogicPlugin has no override for closing a game
+        await this.stateManagerPlugin.OnCloseGame(info, cancellationToken);
+
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
 
     public override async Task OnRaiseEvent(
         IRaiseEventCallInfo info,
         CancellationToken cancellationToken
     )
     {
-        await gameLogicPlugin.OnRaiseEvent(info, cancellationToken);
+        await this.gameLogicPlugin.OnRaiseEvent(info, cancellationToken);
         // this.stateManagerPlugin.OnRaiseEvent(info);
 
         if (!info.IsProcessed)
@@ -98,7 +115,7 @@ internal sealed class GluonPlugin(
         CancellationToken cancellationToken
     )
     {
-        await gameLogicPlugin.BeforeSetProperties(info, cancellationToken);
+        await this.gameLogicPlugin.BeforeSetProperties(info, cancellationToken);
 
         if (!info.IsProcessed)
         {
@@ -106,19 +123,22 @@ internal sealed class GluonPlugin(
         }
     }
 
-    // public override void OnSetProperties(ISetPropertiesCallInfo info)
-    // {
-    //     gameLogicPlugin.OnSetProperties(info);
-    //     // this.stateManagerPlugin.OnSetProperties(info);
-    //
-    //     if (pluginStateService.IsPubliclyVisible)
-    //     {
-    //         // this.discordPlugin?.OnSetProperties(info);
-    //     }
-    //
-    //     if (!info.IsProcessed)
-    //     {
-    //         info.Continue();
-    //     }
-    // }
+    public override async Task OnSetProperties(
+        ISetPropertiesCallInfo info,
+        CancellationToken cancellationToken
+    )
+    {
+        // GameLogicPlugin has no OnSetProperties logic
+        await this.stateManagerPlugin.OnSetProperties(info, cancellationToken);
+
+        // if (pluginStateService.IsPubliclyVisible)
+        // {
+        //     // this.discordPlugin?.OnSetProperties(info);
+        // }
+        //
+        if (!info.IsProcessed)
+        {
+            info.Continue();
+        }
+    }
 }

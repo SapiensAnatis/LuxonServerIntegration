@@ -173,14 +173,87 @@ internal sealed partial class CSharpServerImports(
         bool failedOnCreate
     )
     {
-        // TODO: this doesn't fire for disconnects due to errors
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, null);
+        }
 
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        var info = new CloseGameCallInfo { OperationRequest = null! };
+
+        Task pluginCallback = plugin.OnCloseGame(info, cts.Token);
+
+        if (!info.IsProcessed)
+        {
+            throw new NotSupportedException(
+                "OnCloseGame callbacks must return a plugin result synchronously"
+            );
+        }
+
+        // They must return synchronously because I am not smart enough to make the below happen on resume
         gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
-        return LuxonGamePluginResult.Continue;
+        return this.HandlePluginTaskResult(pluginCallback, info, null, null, cts);
     }
 
     public LuxonGamePluginResult GamePluginBeforeSetProperties(
+        uint pluginId,
+        Game game,
+        SerMessageRef request,
+        GamePeer setter,
+        bool broadcast,
+        int targetActorId,
+        SerValueRef update,
+        SerValueRef expected
+    )
+    {
+        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        {
+            // The command has been restarted because a suspended command returned a plugin result.
+            return this.HandleCommandRestart(previousContext, request);
+        }
+
+        IGamePlugin plugin = this.GetPlugin(game, pluginId);
+
+        Message managedRequest = request.ToManagedMessage();
+
+        if (managedRequest.Payload is not OperationRequestMessage opr)
+        {
+            throw new InvalidOperationException("Failed to get OperationRequestMessage");
+        }
+
+        if (update.ToManagedValue() is not { Content: IDictionary<Value, Value> valueHashtable })
+        {
+            throw new InvalidOperationException("Failed to get properties hashtable");
+        }
+
+        var info = new BeforeSetPropertiesCallInfo()
+        {
+            OperationRequest = opr,
+            Request = new SetPropertiesRequest()
+            {
+                Properties = new TypelessLuxonDictionaryProxy(valueHashtable),
+                ActorNumber = targetActorId,
+            },
+            ActorNr = setter.ActorId,
+        };
+
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
+        CancellationTokenSource cts = new(TimeSpan.FromSeconds(5));
+#pragma warning restore CA2000
+
+        Task pluginCallback = plugin.BeforeSetProperties(info, cts.Token);
+
+        return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
+    }
+
+    public LuxonGamePluginResult GamePluginOnSetProperties(
         uint pluginId,
         Game game,
         SerMessageRef request,
@@ -276,8 +349,8 @@ internal sealed partial class CSharpServerImports(
 
     private static LuxonGamePluginResult FinishCommand(
         CallInfo info,
-        SerMessageRef request,
-        Message managedRequest
+        SerMessageRef? request,
+        Message? managedRequest
     )
     {
         if (!info.HasResult())
@@ -289,14 +362,17 @@ internal sealed partial class CSharpServerImports(
 
         var result = info.Result.Value;
 
-        request.Replace(managedRequest);
+        if (request is not null && managedRequest is not null)
+        {
+            request.Replace(managedRequest);
+        }
 
         return result;
     }
 
     private LuxonGamePluginResult HandleCommandRestart(
         InfoCallbackContext previousContext,
-        SerMessageRef request
+        SerMessageRef? request
     )
     {
         gameManager.CurrentCallbackContext.Value = null;
@@ -335,8 +411,8 @@ internal sealed partial class CSharpServerImports(
     private LuxonGamePluginResult HandlePluginTaskResult(
         Task pluginCallback,
         CallInfo info,
-        SerMessageRef request,
-        Message managedRequest,
+        SerMessageRef? request,
+        Message? managedRequest,
         CancellationTokenSource cts
     )
     {
