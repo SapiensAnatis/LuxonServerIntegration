@@ -1,0 +1,19 @@
+# Build artifacts
+**/bin/
+**/obj/
+# Stale native CMake build tree from host-side builds of the submodule
+submodules/LuxonServer/build/
+
+# VCS / IDE
+.git/
+.idea/
+*.user
+*.DotSettings.user
+
+# Files not needed by the build
+docs/
+**/*.md
+
+# Docker
+Dockerfile
+.dockerignore

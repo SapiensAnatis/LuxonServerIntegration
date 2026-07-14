@@ -1,0 +1,3 @@
+[submodule "submodules/LuxonServer"]
+	path = submodules/LuxonServer
+	url = https://gitlab.com/luxon_project/LuxonServer
