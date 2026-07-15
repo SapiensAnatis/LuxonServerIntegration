@@ -20,6 +20,13 @@ IConfigurationRoot configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
+var logImports = new LogImports();
+
+LuxonServerRuntime.EnableCustomLogSink(true);
+LuxonServerRuntime.SetImports(
+    new LuxonServerImports() { CustomLogSink = logImports.CustomLogSink }
+);
+
 using var pluginManager = new PluginManager(configuration);
 pluginManager.LoadPluginsFromConfig();
 
@@ -31,19 +38,20 @@ using var serverManager = ServerManager.CreateFromFile(
 
 var csImports = new CSharpServerImports(serverManager, pluginManager, gameManager);
 
-var imports = new LuxonServerImports
-{
-    GamePluginOnAttach = csImports.GamePluginOnAttach,
-    GamePluginOnCreateGame = csImports.GamePluginOnCreateGame,
-    GamePluginOnJoinGame = csImports.GamePluginOnJoinGame,
-    GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
-    GamePluginOnRaiseEvent = csImports.GamePluginOnRaiseEvent,
-    GamePluginBeforeSetProperties = csImports.GamePluginBeforeSetProperties,
-    GamePluginOnSetProperties = csImports.GamePluginOnSetProperties,
-    GamePluginOnLeave = csImports.GamePluginOnLeave,
-};
-
-LuxonServerRuntime.SetImports(imports);
+LuxonServerRuntime.SetImports(
+    new LuxonServerImports
+    {
+        GamePluginOnAttach = csImports.GamePluginOnAttach,
+        GamePluginOnCreateGame = csImports.GamePluginOnCreateGame,
+        GamePluginOnJoinGame = csImports.GamePluginOnJoinGame,
+        GamePluginOnCloseGame = csImports.GamePluginOnCloseGame,
+        GamePluginOnRaiseEvent = csImports.GamePluginOnRaiseEvent,
+        GamePluginBeforeSetProperties = csImports.GamePluginBeforeSetProperties,
+        GamePluginOnSetProperties = csImports.GamePluginOnSetProperties,
+        GamePluginOnLeave = csImports.GamePluginOnLeave,
+        CustomLogSink = logImports.CustomLogSink,
+    }
+);
 
 LuxonServerRuntime.UnhandledCallbackException += OnUnhandledPluginException;
 

@@ -10,23 +10,40 @@ using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.Host;
 
-internal sealed partial class CSharpServerImports(
-    ServerManager serverManager,
-    PluginManager pluginManager,
-    GameManager gameManager
-)
+internal sealed partial class CSharpServerImports
 {
-    private ILogger<CSharpServerImports> logger =
-        LoggerConfiguration.Factory.CreateLogger<CSharpServerImports>();
+    private readonly ServerManager serverManager;
+    private readonly PluginManager pluginManager;
+    private readonly GameManager gameManager;
+
+    [SuppressMessage(
+        "Microsoft.Performance",
+        "CA1823:AvoidUnusedPrivateFields",
+        Justification = "Used by the logging source generator"
+    )]
+    private readonly ILogger<CSharpServerImports> logger;
+
+    public CSharpServerImports(
+        ServerManager serverManager,
+        PluginManager pluginManager,
+        GameManager gameManager
+    )
+    {
+        this.serverManager = serverManager;
+        this.pluginManager = pluginManager;
+        this.gameManager = gameManager;
+
+        this.logger = LoggerConfiguration.Factory.CreateLogger<CSharpServerImports>();
+    }
 
     public void GamePluginOnAttach(uint pluginId, Game game)
     {
-        if (!pluginManager.TryCreatePlugin(pluginId, game, out IGamePlugin? plugin))
+        if (!this.pluginManager.TryCreatePlugin(pluginId, game, out IGamePlugin? plugin))
         {
             throw new InvalidOperationException($"Failed to create plugin with ID {pluginId}");
         }
 
-        gameManager.AddPluginToGame(game.DangerousHandle, pluginId, plugin);
+        this.gameManager.AddPluginToGame(game.DangerousHandle, pluginId, plugin);
     }
 
     public LuxonGamePluginResult GamePluginOnCreateGame(
@@ -38,7 +55,7 @@ internal sealed partial class CSharpServerImports(
         bool createIfNotExist
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -84,7 +101,7 @@ internal sealed partial class CSharpServerImports(
         GamePeer joiner
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -128,7 +145,7 @@ internal sealed partial class CSharpServerImports(
         byte cacheOp
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -173,7 +190,7 @@ internal sealed partial class CSharpServerImports(
         bool failedOnCreate
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, null);
@@ -197,7 +214,7 @@ internal sealed partial class CSharpServerImports(
         }
 
         // They must return synchronously because I am not smart enough to make the below happen on resume
-        gameManager.RemovePlugin(game.DangerousHandle, pluginId);
+        this.gameManager.RemovePlugin(game.DangerousHandle, pluginId);
 
         return this.HandlePluginTaskResult(pluginCallback, info, null, null, cts);
     }
@@ -213,7 +230,7 @@ internal sealed partial class CSharpServerImports(
         SerValueRef expected
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -264,7 +281,7 @@ internal sealed partial class CSharpServerImports(
         SerValueRef expected
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -311,7 +328,7 @@ internal sealed partial class CSharpServerImports(
         GamePeer leaver
     )
     {
-        if (gameManager.CurrentCallbackContext.Value is { } previousContext)
+        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
         {
             // The command has been restarted because a suspended command returned a plugin result.
             return this.HandleCommandRestart(previousContext, request);
@@ -375,7 +392,7 @@ internal sealed partial class CSharpServerImports(
         SerMessageRef? request
     )
     {
-        gameManager.CurrentCallbackContext.Value = null;
+        this.gameManager.CurrentCallbackContext.Value = null;
 
         if (previousContext.CallInfo is null)
         {
@@ -453,7 +470,7 @@ internal sealed partial class CSharpServerImports(
         this.LogPluginSuspendedWithoutSettingResult();
 
         // This will suspend the active command until we call Restart on it
-        CommandRestarter commandRestarter = serverManager.TakeCommandRestarter();
+        CommandRestarter commandRestarter = this.serverManager.TakeCommandRestarter();
 
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic.
         InfoCallbackContext infoCtx = new()
@@ -475,19 +492,26 @@ internal sealed partial class CSharpServerImports(
 
     private void SetupTaskCallbacks(TaskContext ctx)
     {
-        ctx.PluginTask.GetAwaiter().OnCompleted(() => gameManager.CompletedTaskQueue.Enqueue(ctx));
+        ctx.PluginTask.GetAwaiter()
+            .OnCompleted(() => this.gameManager.CompletedTaskQueue.Enqueue(ctx));
     }
 
     private void SetupInfoCallbacks(InfoCallbackContext ctx)
     {
         this.SetupTaskCallbacks(ctx);
 
-        ctx.CallInfo.OnResultSet(() => gameManager.CommandRestartQueue.Enqueue(ctx));
+        ctx.CallInfo.OnResultSet(() => this.gameManager.CommandRestartQueue.Enqueue(ctx));
     }
 
     private IGamePlugin GetPlugin(Game game, uint pluginId)
     {
-        if (!gameManager.TryGetGamePlugin(game.DangerousHandle, pluginId, out IGamePlugin? plugin))
+        if (
+            !this.gameManager.TryGetGamePlugin(
+                game.DangerousHandle,
+                pluginId,
+                out IGamePlugin? plugin
+            )
+        )
         {
             throw new InvalidOperationException($"Failed to retrieve plugin with ID {pluginId}");
         }
