@@ -2,6 +2,8 @@
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0-resolute AS native
 
+WORKDIR /src
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
         cmake \
@@ -9,11 +11,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
         ca-certificates \
         libmbedtls-dev \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* 
 
-WORKDIR /src
+ARG LUXON_SERVER_COMMIT_HASH="efc288fe6ff21764ab1bd934347f596bab955b02"
 
-COPY ["./submodules/LuxonServer", "."]
+RUN git init -q && \
+    git remote add origin https://gitlab.com/luxon_project/LuxonServer.git && \
+    git fetch --depth 1 origin "$LUXON_SERVER_COMMIT_HASH" && \
+    git checkout FETCH_HEAD && \
+    git submodule update --init --recursive --depth 1
 
 RUN cmake -S . -B build -G Ninja \
         -DCMAKE_BUILD_TYPE=RelWithDebInfo \
@@ -42,7 +48,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libubsan1 \
         libmbedtls21 \
     && rm -rf /var/lib/apt/lists/*
-
 
 WORKDIR /app
 
