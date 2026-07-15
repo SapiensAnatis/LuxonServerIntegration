@@ -162,6 +162,8 @@ internal sealed partial class StateManagerPlugin : PluginBase
             new GameModifyRequest { GameName = this.PluginHost.GameId, Player = null }
         );
 
+        info.Continue();
+
         var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
 
         if (!res.IsSuccessStatusCode)
