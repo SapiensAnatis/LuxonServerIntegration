@@ -29,10 +29,35 @@
     <ProjectReference Include="..\Luxon.Server\Luxon.Server.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Constants\" />
-    <Folder Include="Imports\" />
-  </ItemGroup>
+  <!-- Development convenience: stage the sibling plugin into the stable
+       plugins/<Name>/<Version>/ layout the host loads from, so dev matches prod.
+       GetTargetPath only reads the already-built output path (the ProjectReference
+       above builds the plugin first) — it does not recompile the plugin. -->
+  <PropertyGroup>
+    <GluonPluginName>GluonPlugin</GluonPluginName>
+    <GluonPluginVersion>v1</GluonPluginVersion>
+  </PropertyGroup>
+
+  <Target Name="StagePlugins" AfterTargets="Build">
+    <MSBuild Projects="..\Luxon.Server.GluonPlugin\Luxon.Server.GluonPlugin.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration)">
+      <Output TaskParameter="TargetOutputs" ItemName="_PluginTarget" />
+    </MSBuild>
+
+    <PropertyGroup>
+      <_PluginOutDir>$([System.IO.Path]::GetDirectoryName('%(_PluginTarget.Identity)'))</_PluginOutDir>
+      <_PluginStageDir>$(OutDir)plugins\$(GluonPluginName)\$(GluonPluginVersion)\</_PluginStageDir>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <_PluginFiles Include="$(_PluginOutDir)\**\*" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(_PluginFiles)"
+          DestinationFiles="@(_PluginFiles->'$(_PluginStageDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 
   <ItemGroup>
     <None Update="config.yml">

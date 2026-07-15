@@ -10,11 +10,6 @@ namespace Luxon.Server.GluonPlugin.Plugins.Gluon;
 
 public partial class GluonPluginFactory : IPluginFactory
 {
-    public GluonPluginFactory()
-    {
-        Console.WriteLine("GluonPluginFactory: ctor");
-    }
-
     public IGamePlugin Create(IPluginHost gameHost, string pluginName, IConfiguration config)
     {
         ArgumentNullException.ThrowIfNull(gameHost);

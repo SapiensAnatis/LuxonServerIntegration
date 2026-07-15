@@ -5,12 +5,16 @@ using System.Runtime.CompilerServices;
 using Luxon.Server.Host.Plugin;
 using Luxon.Server.Plugin;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using SharpYaml;
 
 namespace Luxon.Server.Host;
 
-internal sealed class PluginManager : IDisposable
+internal sealed partial class PluginManager : IDisposable
 {
+    private static readonly ILogger<PluginManager> Logger =
+        LoggerConfiguration.Factory.CreateLogger<PluginManager>();
+
     private readonly IConfigurationRoot pluginConfiguration;
     private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap;
     private readonly SocketsHttpHandler httpHandler;
@@ -79,8 +83,17 @@ internal sealed class PluginManager : IDisposable
                 id,
                 new PluginDetails(plugin.Name, factory, loadContext, plugin.Configuration)
             );
+
+            LogPluginLoaded(Logger, plugin.Name, plugin.Version);
         }
     }
+
+    [LoggerMessage(LogLevel.Information, "Loaded plugin {PluginName} ({PluginVersion})")]
+    private static partial void LogPluginLoaded(
+        ILogger logger,
+        string pluginName,
+        string pluginVersion
+    );
 
     public bool TryCreatePlugin(uint id, Game game, [NotNullWhen(true)] out IGamePlugin? plugin)
     {

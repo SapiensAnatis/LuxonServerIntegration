@@ -30,9 +30,10 @@ COPY [".", "."]
 
 RUN dotnet publish Luxon.Server.Host/Luxon.Server.Host.csproj -c Release -o out/host
 
-# NOTE: PluginAssemblyLoadContext hardcodes the plugin path as literally
-# ".../bin/Debug/net10.0/" (see the TODO there), hence -c Debug.
-RUN dotnet publish Luxon.Server.GluonPlugin/Luxon.Server.GluonPlugin.csproj -c Debug -o out/plugin
+# Publish the plugin straight into the stable layout the host loads from:
+#   <base>/plugins/<Name>/<Version>/<AssemblyName>
+# (see PluginAssemblyLoadContext). Version must match plugin.yml (v1).
+RUN dotnet publish Luxon.Server.GluonPlugin/Luxon.Server.GluonPlugin.csproj -c Release -o out/host/plugins/GluonPlugin/v1
 
 FROM mcr.microsoft.com/dotnet/runtime:10.0-resolute AS runtime
 
@@ -48,10 +49,8 @@ WORKDIR /app
 COPY --from=native /src/build/libluxon_server_ffi.so /usr/lib/x86_64-linux-gnu/libluxon_server.so
 RUN ldconfig
 
-# DIRTY HACKS
-COPY --from=dotnet /src/out/host/   ./Luxon.Server.Host/bin/Release/net10.0/
-COPY --from=dotnet /src/out/plugin/ ./Luxon.Server.GluonPlugin/bin/Debug/net10.0/
-WORKDIR /app/Luxon.Server.Host/bin/Release/net10.0
+# The published host carries its plugins under ./plugins/<Name>/<Version>/.
+COPY --from=dotnet /src/out/host/ ./
 
 ENV LD_PRELOAD=libasan.so.8
 

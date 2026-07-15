@@ -7,10 +7,14 @@ namespace Luxon.Server.Host;
 
 internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
 {
-    // TODO: find a better way to determine the plugin load path
-    private static readonly string PluginsBasePath = Path.Join(
+    // Plugins live in a stable, versioned layout next to the host:
+    //   plugins/<Name>/<Version>/<AssemblyName>
+    // In development the build stages the sibling plugin project into the same
+    // layout (see the StagePlugins target in Luxon.Server.Host.csproj), so this
+    // resolution rule is identical for dev and prod.
+    private static readonly string PluginsRoot = Path.Combine(
         AppContext.BaseDirectory,
-        "../../../../Luxon.Server.GluonPlugin/bin/Debug/net10.0/"
+        "plugins"
     );
 
     private readonly string pluginPath;
@@ -23,7 +27,18 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
     public PluginAssemblyLoadContext(PluginConfig config)
         : base(name: $"PluginLoadContext_{config.Name}", isCollectible: false)
     {
-        this.pluginPath = Path.Join(PluginsBasePath, config.AssemblyName);
+        string pluginDir = Path.Combine(PluginsRoot, config.Name, config.Version);
+        this.pluginPath = Path.Combine(pluginDir, config.AssemblyName);
+
+        if (!File.Exists(this.pluginPath))
+        {
+            throw new FileNotFoundException(
+                $"Plugin '{config.Name}' assembly not found at '{this.pluginPath}'. "
+                    + $"Expected layout: plugins/{config.Name}/{config.Version}/{config.AssemblyName}",
+                this.pluginPath
+            );
+        }
+
         this.pluginResolver = new AssemblyDependencyResolver(this.pluginPath);
     }
 
