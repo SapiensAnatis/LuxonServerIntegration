@@ -12,8 +12,7 @@ namespace Luxon.Server.Host;
 
 internal sealed partial class PluginManager : IDisposable
 {
-    private static readonly ILogger<PluginManager> Logger =
-        LoggerConfiguration.Factory.CreateLogger<PluginManager>();
+    private readonly ILogger<PluginManager> logger;
 
     private readonly IConfigurationRoot pluginConfiguration;
     private readonly Dictionary<uint, PluginDetails> pluginIdToPluginMap;
@@ -21,6 +20,8 @@ internal sealed partial class PluginManager : IDisposable
 
     public PluginManager(IConfigurationRoot pluginConfiguration)
     {
+        this.logger = LoggerConfiguration.Factory.CreateLogger<PluginManager>();
+
         this.pluginConfiguration = pluginConfiguration;
         this.pluginIdToPluginMap = [];
 
@@ -84,16 +85,33 @@ internal sealed partial class PluginManager : IDisposable
                 new PluginDetails(plugin.Name, factory, loadContext, plugin.Configuration)
             );
 
-            LogPluginLoaded(Logger, plugin.Name, plugin.Version);
+            this.LogPluginLoaded(plugin.Name, plugin.Version);
+
+            this.DumpPluginConfiguration(plugin.Name, plugin.Configuration);
         }
     }
 
-    [LoggerMessage(LogLevel.Information, "Loaded plugin {PluginName} ({PluginVersion})")]
-    private static partial void LogPluginLoaded(
-        ILogger logger,
-        string pluginName,
-        string pluginVersion
-    );
+    private void DumpPluginConfiguration(string pluginName, IConfiguration config)
+    {
+        foreach ((string key, string? value) in config.AsEnumerable())
+        {
+            // Intermediate (parent) keys have a null value; only leaves carry scalars.
+            if (value is null)
+            {
+                continue;
+            }
+
+            this.LogPluginConfigurationEntry(key, Redact(key, value));
+        }
+    }
+
+    private static string Redact(string key, string value) => IsSensitiveKey(key) ? "***" : value;
+
+    private static bool IsSensitiveKey(string key) =>
+        key.Contains("token", StringComparison.OrdinalIgnoreCase)
+        || key.Contains("secret", StringComparison.OrdinalIgnoreCase)
+        || key.Contains("password", StringComparison.OrdinalIgnoreCase)
+        || key.Contains("apikey", StringComparison.OrdinalIgnoreCase);
 
     public bool TryCreatePlugin(uint id, Game game, [NotNullWhen(true)] out IGamePlugin? plugin)
     {
@@ -125,4 +143,10 @@ internal sealed partial class PluginManager : IDisposable
     {
         this.httpHandler.Dispose();
     }
+
+    [LoggerMessage(LogLevel.Information, "Loaded plugin {PluginName} ({PluginVersion})")]
+    private partial void LogPluginLoaded(string pluginName, string pluginVersion);
+
+    [LoggerMessage(LogLevel.Information, "Configuration: {ConfigKey} = {ConfigValue}")]
+    private partial void LogPluginConfigurationEntry(string configKey, string configValue);
 }

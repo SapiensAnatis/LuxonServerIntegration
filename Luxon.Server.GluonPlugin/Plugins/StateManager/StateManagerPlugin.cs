@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -76,7 +77,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
         // https://doc.photonengine.com/server/current/plugins/plugins-faq#how_to_get_the_actor_number_in_plugin_callbacks_
         int actorNr = 1;
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             GameCreateEndpoint,
             new GameCreateRequest()
             {
@@ -85,12 +86,23 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnCreateGame", res.StatusCode);
+        }
     }
 
     public override async Task OnJoin(IJoinGameCallInfo info, CancellationToken cancellationToken)
     {
-        using HttpRequestMessage request = this.CreateRequest(
+        if (info.ActorNr == 1)
+        {
+            // Already added as part of OnCreateGame
+            return;
+        }
+
+        using HttpRequestMessage request = this.CreatePostRequest(
             GameJoinEndpoint,
             new GameModifyRequest
             {
@@ -99,7 +111,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnJoin", res.StatusCode);
+        }
     }
 
     public override async Task OnLeave(ILeaveGameCallInfo info, CancellationToken cancellationToken)
@@ -118,7 +135,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
             return;
         }
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             GameLeaveEndpoint,
             new GameModifyRequest
             {
@@ -127,7 +144,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnLeave", res.StatusCode);
+        }
     }
 
     public override async Task OnCloseGame(
@@ -135,12 +157,17 @@ internal sealed partial class StateManagerPlugin : PluginBase
         CancellationToken cancellationToken
     )
     {
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             GameCloseEndpoint,
             new GameModifyRequest { GameName = this.PluginHost.GameId, Player = null }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnCloseGame", res.StatusCode);
+        }
     }
 
     public override async Task OnSetProperties(
@@ -178,7 +205,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
 
     private async Task OnGameSucceed(CancellationToken cancellationToken)
     {
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             VisibleEndpoint,
             new GameModifyVisibleRequest
             {
@@ -188,7 +215,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("GameSucceed", res.StatusCode);
+        }
 
         this.roomHidden = false;
     }
@@ -201,7 +233,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
         MatchingTypes newType = (MatchingTypes)
             info.Request.Properties.GetInt(GamePropertyKeys.MatchingType);
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             MatchingTypeEndpoint,
             new GameModifyMatchingTypeRequest()
             {
@@ -211,7 +243,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnSetMatchingType", res.StatusCode);
+        }
     }
 
     private async Task OnSetEntryConditions(
@@ -228,7 +265,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
             return;
         }
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             EntryConditionsEndpoint,
             new GameModifyConditionsRequest()
             {
@@ -238,7 +275,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnSetEntryConditions", res.StatusCode);
+        }
     }
 
     private async Task OnSetGoToIngameState(CancellationToken cancellationToken)
@@ -254,7 +296,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
             return;
         }
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             VisibleEndpoint,
             new GameModifyVisibleRequest
             {
@@ -264,7 +306,12 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnSetGoToIngameState", res.StatusCode);
+        }
 
         this.roomHidden = true;
     }
@@ -273,7 +320,7 @@ internal sealed partial class StateManagerPlugin : PluginBase
     {
         int roomId = this.PluginHost.GameProperties.GetInt(GamePropertyKeys.RoomId);
 
-        using HttpRequestMessage request = this.CreateRequest(
+        using HttpRequestMessage request = this.CreatePostRequest(
             RoomIdEndpoint,
             new GameModifyRoomIdRequest
             {
@@ -283,16 +330,26 @@ internal sealed partial class StateManagerPlugin : PluginBase
             }
         );
 
-        await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+        var res = await this.PluginHost.HttpClient.SendAsync(request, cancellationToken);
+
+        if (!res.IsSuccessStatusCode)
+        {
+            this.LogStateManagerRequestFailed("OnSetRoomId", res.StatusCode);
+        }
     }
 
-    private HttpRequestMessage CreateRequest(Uri endpoint, object request)
+    private HttpRequestMessage CreatePostRequest(Uri endpoint, object request)
     {
         Uri requestUri = new(this.StateManagerUrl, endpoint);
 
         JsonContent content = JsonContent.Create(request, options: JsonSerializerSettings);
 
-        return new HttpRequestMessage() { RequestUri = requestUri, Content = content };
+        return new HttpRequestMessage()
+        {
+            RequestUri = requestUri,
+            Content = content,
+            Method = HttpMethod.Post,
+        };
     }
 
     [LoggerMessage(
@@ -300,4 +357,10 @@ internal sealed partial class StateManagerPlugin : PluginBase
         "OnLeave: could not find actor {ActorNr} -- GameLeave request aborted"
     )]
     partial void LogCouldNotFindActor(int actorNr);
+
+    [LoggerMessage(
+        LogLevel.Error,
+        "{Method}: StateManager request failed with status {StatusCode}"
+    )]
+    partial void LogStateManagerRequestFailed(string method, HttpStatusCode statusCode);
 }

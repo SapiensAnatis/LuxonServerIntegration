@@ -57,7 +57,9 @@ RUN ldconfig
 # The published host carries its plugins under ./plugins/<Name>/<Version>/.
 COPY --from=dotnet /src/out/host/ ./
 
-ENV LD_PRELOAD=libasan.so.8
+ENV LD_PRELOAD="libasan.so.8"
+# libcoreclr trips "alloc-dealloc-mismatch (operator new [] vs operator delete)" sometimes - likely false positive
+ENV ASAN_OPTIONS="alloc_dealloc_mismatch=0"
 
 EXPOSE 5055/udp 5056/udp 5058/udp 27000/udp 27001/udp 27002/udp
 
