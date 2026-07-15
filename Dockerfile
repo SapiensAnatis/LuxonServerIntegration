@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* 
 
 ARG LUXON_SERVER_COMMIT_HASH="efc288fe6ff21764ab1bd934347f596bab955b02"
+ARG LUXON_BUILD_TYPE="RelWithDebInfo"
 
 RUN git init -q && \
     git remote add origin https://gitlab.com/luxon_project/LuxonServer.git && \
@@ -22,7 +23,7 @@ RUN git init -q && \
     git submodule update --init --recursive --depth 1
 
 RUN cmake -S . -B build -G Ninja \
-        -DCMAKE_BUILD_TYPE=RelWithDebInfo \
+        -DCMAKE_BUILD_TYPE="$LUXON_BUILD_TYPE" \
         -DCMAKE_UNITY_BUILD=ON \
         -DLUXON_SERVER_BUILD_FFI=ON \
         -DLUXON_SERVER_EXPOSE_FULL_FFI=ON \
