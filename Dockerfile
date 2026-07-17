@@ -14,13 +14,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* 
 
 ARG LUXON_SERVER_COMMIT_HASH="efc288fe6ff21764ab1bd934347f596bab955b02"
-ARG LUXON_BUILD_TYPE="RelWithDebInfo"
 
 RUN git init -q && \
     git remote add origin https://gitlab.com/luxon_project/LuxonServer.git && \
     git fetch --depth 1 origin "$LUXON_SERVER_COMMIT_HASH" && \
     git checkout FETCH_HEAD && \
-    git submodule update --init --recursive --depth 1
+    git submodule update --init --recursive --depth 1 
+
+ARG LUXON_BUILD_TYPE="RelWithDebInfo"
 
 RUN cmake -S . -B build -G Ninja \
         -DCMAKE_BUILD_TYPE="$LUXON_BUILD_TYPE" \
@@ -60,7 +61,7 @@ COPY --from=dotnet /src/out/host/ ./
 
 ENV LD_PRELOAD="libasan.so.8"
 # libcoreclr trips "alloc-dealloc-mismatch (operator new [] vs operator delete)" sometimes - likely false positive
-ENV ASAN_OPTIONS="alloc_dealloc_mismatch=0"
+ENV ASAN_OPTIONS="ASAN_OPTIONS=abort_on_error=1:disable_coredump=0"
 
 EXPOSE 5055/udp 5056/udp 5058/udp 27000/udp 27001/udp 27002/udp
 
