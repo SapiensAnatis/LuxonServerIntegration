@@ -5,12 +5,10 @@ namespace Luxon.Server;
 public sealed class ByteArrayBuffer : NativeResource
 {
     internal ByteArrayBuffer(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
-    public static ByteArrayBuffer Create()
-        => new(LuxonInteropHelpers.Checked(NativeMethods.createByteArray), true);
+    public static ByteArrayBuffer Create() =>
+        new(LuxonInteropHelpers.Checked(NativeMethods.createByteArray), true);
 
     public static ByteArrayBuffer FromBytes(ReadOnlySpan<byte> data)
     {
@@ -33,12 +31,15 @@ public sealed class ByteArrayBuffer : NativeResource
 
     public byte[] Bytes => ToArray();
 
-    public IntPtr DataPointer => LuxonInteropHelpers.Checked(() => NativeMethods.getByteArrayDataPtr(Handle));
+    public IntPtr DataPointer =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.getByteArrayDataPtr(Handle));
 
     public nuint CopyTo(byte[] destination)
     {
         ArgumentNullException.ThrowIfNull(destination);
-        return LuxonInteropHelpers.Checked(() => NativeMethods.copyFromByteArray(Handle, destination, (nuint)destination.Length));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.copyFromByteArray(Handle, destination, (nuint)destination.Length)
+        );
     }
 
     public byte[] ToArray()
@@ -69,42 +70,47 @@ public sealed class ByteArrayBuffer : NativeResource
         }
 
         var bytes = data.ToArray();
-        LuxonInteropHelpers.Checked(() => NativeMethods.appendToByteArray(Handle, bytes, (nuint)bytes.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.appendToByteArray(Handle, bytes, (nuint)bytes.Length)
+        );
     }
 
     public void Replace(ReadOnlySpan<byte> data)
     {
         var bytes = data.ToArray();
-        LuxonInteropHelpers.Checked(() => NativeMethods.copyToByteArray(Handle, bytes, (nuint)bytes.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.copyToByteArray(Handle, bytes, (nuint)bytes.Length)
+        );
     }
 
-    public void Push(byte value)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.pushToByteArray(Handle, value));
+    public void Push(byte value) =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.pushToByteArray(Handle, value));
 
     public byte this[int index]
     {
         get
         {
             ArgumentOutOfRangeException.ThrowIfNegative(index);
-            return LuxonInteropHelpers.Checked(() => NativeMethods.getInByteArray(Handle, (nuint)index));
+            return LuxonInteropHelpers.Checked(() =>
+                NativeMethods.getInByteArray(Handle, (nuint)index)
+            );
         }
         set
         {
             ArgumentOutOfRangeException.ThrowIfNegative(index);
-            LuxonInteropHelpers.Checked(() => NativeMethods.setInByteArray(Handle, (nuint)index, value));
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.setInByteArray(Handle, (nuint)index, value)
+            );
         }
     }
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroyByteArray(handle);
+    protected override void ReleaseHandle(IntPtr handle) => NativeMethods.destroyByteArray(handle);
 }
 
 public sealed class SerValueRef : NativeResource
 {
     internal SerValueRef(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
     public global::Luxon.Ser.Value ManagedValue
     {
@@ -112,8 +118,8 @@ public sealed class SerValueRef : NativeResource
         set => Replace(value);
     }
 
-    public static SerValueRef Create()
-        => new(LuxonInteropHelpers.Checked(NativeMethods.createSerValue), true);
+    public static SerValueRef Create() =>
+        new(LuxonInteropHelpers.Checked(NativeMethods.createSerValue), true);
 
     internal static SerValueRef CreatePopulated(Action<IntPtr> populator)
     {
@@ -179,8 +185,8 @@ public sealed class SerValueRef : NativeResource
         }
     }
 
-    public ByteArrayBuffer SerializeToByteArray()
-        => new(LuxonInteropHelpers.Checked(() => NativeMethods.serializeSerValue(Handle)), true);
+    public ByteArrayBuffer SerializeToByteArray() =>
+        new(LuxonInteropHelpers.Checked(() => NativeMethods.serializeSerValue(Handle)), true);
 
     public byte[] ToBytes()
     {
@@ -191,7 +197,9 @@ public sealed class SerValueRef : NativeResource
     public bool TryDeserialize(ReadOnlySpan<byte> data)
     {
         var bytes = data.ToArray();
-        return LuxonInteropHelpers.Checked(() => NativeMethods.deserializeSerValue(bytes, (nuint)bytes.Length, Handle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.deserializeSerValue(bytes, (nuint)bytes.Length, Handle)
+        );
     }
 
     public void Deserialize(ReadOnlySpan<byte> data)
@@ -205,36 +213,35 @@ public sealed class SerValueRef : NativeResource
     public bool TryDeserialize(ByteArrayBuffer data)
     {
         LuxonInteropHelpers.ThrowIfDisposed(data, nameof(data));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.deserializeSerValueFromByteArray(data.DangerousHandle, Handle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.deserializeSerValueFromByteArray(data.DangerousHandle, Handle)
+        );
     }
 
     public void Deserialize(ByteArrayBuffer data)
     {
         if (!TryDeserialize(data))
         {
-            throw new InvalidDataException("Native ser value deserialization from byte array returned false.");
+            throw new InvalidDataException(
+                "Native ser value deserialization from byte array returned false."
+            );
         }
     }
 
-    public global::Luxon.Ser.Value ToManagedValue()
-        => LuxonSerBridge.DeserializeValue(ToBytes());
+    public global::Luxon.Ser.Value ToManagedValue() => LuxonSerBridge.DeserializeValue(ToBytes());
 
-    public void Replace(global::Luxon.Ser.Value value)
-        => Deserialize(LuxonSerBridge.SerializeValue(value));
+    public void Replace(global::Luxon.Ser.Value value) =>
+        Deserialize(LuxonSerBridge.SerializeValue(value));
 
-    public SerValueRef Clone()
-        => FromBytes(ToBytes());
+    public SerValueRef Clone() => FromBytes(ToBytes());
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroySerValue(handle);
+    protected override void ReleaseHandle(IntPtr handle) => NativeMethods.destroySerValue(handle);
 }
 
 public sealed class SerMessageRef : NativeResource
 {
     internal SerMessageRef(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
     public global::Luxon.Ser.Message ManagedMessage
     {
@@ -242,8 +249,8 @@ public sealed class SerMessageRef : NativeResource
         set => Replace(value);
     }
 
-    public static SerMessageRef Create()
-        => new(LuxonInteropHelpers.Checked(NativeMethods.createSerMessage), true);
+    public static SerMessageRef Create() =>
+        new(LuxonInteropHelpers.Checked(NativeMethods.createSerMessage), true);
 
     internal static SerMessageRef CreatePopulated(Action<IntPtr> populator)
     {
@@ -309,8 +316,8 @@ public sealed class SerMessageRef : NativeResource
         }
     }
 
-    public ByteArrayBuffer SerializeToByteArray()
-        => new(LuxonInteropHelpers.Checked(() => NativeMethods.serializeSerMessage(Handle)), true);
+    public ByteArrayBuffer SerializeToByteArray() =>
+        new(LuxonInteropHelpers.Checked(() => NativeMethods.serializeSerMessage(Handle)), true);
 
     public byte[] ToBytes()
     {
@@ -321,7 +328,9 @@ public sealed class SerMessageRef : NativeResource
     public bool TryDeserialize(ReadOnlySpan<byte> data)
     {
         var bytes = data.ToArray();
-        return LuxonInteropHelpers.Checked(() => NativeMethods.deserializeSerMessage(bytes, (nuint)bytes.Length, Handle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.deserializeSerMessage(bytes, (nuint)bytes.Length, Handle)
+        );
     }
 
     public void Deserialize(ReadOnlySpan<byte> data)
@@ -335,26 +344,28 @@ public sealed class SerMessageRef : NativeResource
     public bool TryDeserialize(ByteArrayBuffer data)
     {
         LuxonInteropHelpers.ThrowIfDisposed(data, nameof(data));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.deserializeSerMessageFromByteArray(data.DangerousHandle, Handle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.deserializeSerMessageFromByteArray(data.DangerousHandle, Handle)
+        );
     }
 
     public void Deserialize(ByteArrayBuffer data)
     {
         if (!TryDeserialize(data))
         {
-            throw new InvalidDataException("Native ser message deserialization from byte array returned false.");
+            throw new InvalidDataException(
+                "Native ser message deserialization from byte array returned false."
+            );
         }
     }
 
-    public global::Luxon.Ser.Message ToManagedMessage()
-        => LuxonSerBridge.DeserializeMessage(ToBytes());
+    public global::Luxon.Ser.Message ToManagedMessage() =>
+        LuxonSerBridge.DeserializeMessage(ToBytes());
 
-    public void Replace(global::Luxon.Ser.Message message)
-        => Deserialize(LuxonSerBridge.SerializeMessage(message));
+    public void Replace(global::Luxon.Ser.Message message) =>
+        Deserialize(LuxonSerBridge.SerializeMessage(message));
 
-    public SerMessageRef Clone()
-        => FromBytes(ToBytes());
+    public SerMessageRef Clone() => FromBytes(ToBytes());
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroySerMessage(handle);
+    protected override void ReleaseHandle(IntPtr handle) => NativeMethods.destroySerMessage(handle);
 }

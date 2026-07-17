@@ -12,10 +12,7 @@ internal sealed class PluginAssemblyLoadContext : AssemblyLoadContext
     // In development the build stages the sibling plugin project into the same
     // layout (see the StagePlugins target in Luxon.Server.Host.csproj), so this
     // resolution rule is identical for dev and prod.
-    private static readonly string PluginsRoot = Path.Combine(
-        AppContext.BaseDirectory,
-        "plugins"
-    );
+    private static readonly string PluginsRoot = Path.Combine(AppContext.BaseDirectory, "plugins");
 
     private readonly string pluginPath;
     private readonly AssemblyDependencyResolver pluginResolver;

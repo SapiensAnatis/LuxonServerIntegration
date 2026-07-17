@@ -24,8 +24,8 @@ public sealed class Logger
         return new Logger(LuxonInteropHelpers.Checked(() => NativeMethods.getOrCreateLogger(name)));
     }
 
-    public void SetLevel(LuxonLogLevel level)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.setLoggerLevel(_handle, (int)level));
+    public void SetLevel(LuxonLogLevel level) =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.setLoggerLevel(_handle, (int)level));
 
     public void Trace(string message)
     {
@@ -111,37 +111,48 @@ public sealed class Peer
 
     public IntPtr DangerousHandle => _handle;
 
-    public bool IsAuthenticated => LuxonInteropHelpers.Checked(() => NativeMethods.peerIsAuthenticated(_handle));
+    public bool IsAuthenticated =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.peerIsAuthenticated(_handle));
 
-    public LuxonServerProtocol TransportProtocol => LuxonInteropHelpers.Checked(() => NativeMethods.peerGetTransportProtocol(_handle));
+    public LuxonServerProtocol TransportProtocol =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.peerGetTransportProtocol(_handle));
 
-    public string UserId => LuxonInteropHelpers.PtrToUtf8String(LuxonInteropHelpers.Checked(() => NativeMethods.peerGetUserId(_handle)));
+    public string UserId =>
+        LuxonInteropHelpers.PtrToUtf8String(
+            LuxonInteropHelpers.Checked(() => NativeMethods.peerGetUserId(_handle))
+        );
 
     public Game? CurrentGame
     {
         get
         {
-            var handle = LuxonInteropHelpers.Checked(() => NativeMethods.peerGetCurrentGame(_handle));
+            var handle = LuxonInteropHelpers.Checked(() =>
+                NativeMethods.peerGetCurrentGame(_handle)
+            );
             return handle == IntPtr.Zero ? null : new Game(handle);
         }
     }
 
-    public void Send(ReadOnlySpan<byte> payload, byte channel = 0, LuxonDeliveryMode deliveryMode = LuxonDeliveryMode.Reliable)
+    public void Send(
+        ReadOnlySpan<byte> payload,
+        byte channel = 0,
+        LuxonDeliveryMode deliveryMode = LuxonDeliveryMode.Reliable
+    )
     {
         var data = payload.ToArray();
-        LuxonInteropHelpers.Checked(() => NativeMethods.peerSend(_handle, data, (nuint)data.Length, channel, deliveryMode));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.peerSend(_handle, data, (nuint)data.Length, channel, deliveryMode)
+        );
     }
 
-    public void Disconnect()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.peerDisconnect(_handle));
+    public void Disconnect() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.peerDisconnect(_handle));
 }
 
 public sealed class GamePeer : NativeResource
 {
     internal GamePeer(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
     public global::Luxon.Ser.Value ActorProperties
     {
@@ -149,21 +160,23 @@ public sealed class GamePeer : NativeResource
         set => SetActorProperties(value);
     }
 
-    public static GamePeer CreateContainer()
-        => new(LuxonInteropHelpers.Checked(NativeMethods.createGamePeerContainer), true);
+    public static GamePeer CreateContainer() =>
+        new(LuxonInteropHelpers.Checked(NativeMethods.createGamePeerContainer), true);
 
-    internal void TransferOwnershipToNative()
-        => _ = DetachHandle();
+    internal void TransferOwnershipToNative() => _ = DetachHandle();
 
     public bool IsValid => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerIsValid(Handle));
 
-    public int ActorId => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerGetActorId(Handle));
+    public int ActorId =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerGetActorId(Handle));
 
-    public bool HasInterestGroup(byte group)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerHasInterestGroup(Handle, group));
+    public bool HasInterestGroup(byte group) =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerHasInterestGroup(Handle, group));
 
-    public void SetInterestGroup(byte group, bool enable)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerSetInterestGroup(Handle, group, enable));
+    public void SetInterestGroup(byte group, bool enable) =>
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gamePeerSetInterestGroup(Handle, group, enable)
+        );
 
     public uint[] GetInterestGroupsMask(int wordCount = 8)
     {
@@ -175,18 +188,26 @@ public sealed class GamePeer : NativeResource
         }
 
         var words = new uint[wordCount];
-        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerGetInterestGroupsMask(Handle, words, (nuint)words.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gamePeerGetInterestGroupsMask(Handle, words, (nuint)words.Length)
+        );
         return words;
     }
 
     public void SetInterestGroupsMask(ReadOnlySpan<uint> maskWords)
     {
         var words = maskWords.ToArray();
-        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerSetInterestGroupsMask(Handle, words, (nuint)words.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gamePeerSetInterestGroupsMask(Handle, words, (nuint)words.Length)
+        );
     }
 
-    public SerValueRef GetActorPropertiesNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerGetActorProps(Handle, outHandle)));
+    public SerValueRef GetActorPropertiesNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gamePeerGetActorProps(Handle, outHandle)
+            )
+        );
 
     public global::Luxon.Ser.Value GetActorProperties()
     {
@@ -197,7 +218,9 @@ public sealed class GamePeer : NativeResource
     public void SetActorProperties(SerValueRef props)
     {
         LuxonInteropHelpers.ThrowIfDisposed(props, nameof(props));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerSetActorProps(Handle, props.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gamePeerSetActorProps(Handle, props.DangerousHandle)
+        );
     }
 
     public void SetActorProperties(global::Luxon.Ser.Value props)
@@ -210,24 +233,24 @@ public sealed class GamePeer : NativeResource
     {
         get
         {
-            var handle = LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerGetBasePeer(Handle));
+            var handle = LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gamePeerGetBasePeer(Handle)
+            );
             return handle == IntPtr.Zero ? null : new Peer(handle);
         }
     }
 
-    public bool Disconnect()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerDisconnect(Handle));
+    public bool Disconnect() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gamePeerDisconnect(Handle));
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroyGamePeerContainer(handle);
+    protected override void ReleaseHandle(IntPtr handle) =>
+        NativeMethods.destroyGamePeerContainer(handle);
 }
 
 public sealed class LuxonEvent : NativeResource
 {
     internal LuxonEvent(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
     public EventRoutingMetadata RoutingMetadata
     {
@@ -247,14 +270,35 @@ public sealed class LuxonEvent : NativeResource
         set => SetTopParams(value);
     }
 
-    public static LuxonEvent Create()
-        => new(LuxonInteropHelpers.Checked(NativeMethods.createEvent), true);
+    public static LuxonEvent Create() =>
+        new(LuxonInteropHelpers.Checked(NativeMethods.createEvent), true);
 
-    public void SetRoutingMetadata(EventRoutingMetadata metadata)
-        => SetRoutingMetadata(metadata.Code, metadata.SenderActorId, metadata.DeliveryMode, metadata.Channel, metadata.InterestGroup);
+    public void SetRoutingMetadata(EventRoutingMetadata metadata) =>
+        SetRoutingMetadata(
+            metadata.Code,
+            metadata.SenderActorId,
+            metadata.DeliveryMode,
+            metadata.Channel,
+            metadata.InterestGroup
+        );
 
-    public void SetRoutingMetadata(byte code, int senderActorId, LuxonDeliveryMode deliveryMode, byte channel, byte interestGroup)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.eventSetRoutingMetadata(Handle, code, senderActorId, deliveryMode, channel, interestGroup));
+    public void SetRoutingMetadata(
+        byte code,
+        int senderActorId,
+        LuxonDeliveryMode deliveryMode,
+        byte channel,
+        byte interestGroup
+    ) =>
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.eventSetRoutingMetadata(
+                Handle,
+                code,
+                senderActorId,
+                deliveryMode,
+                channel,
+                interestGroup
+            )
+        );
 
     public EventRoutingMetadata GetRoutingMetadata()
     {
@@ -264,27 +308,38 @@ public sealed class LuxonEvent : NativeResource
         byte channel = 0;
         byte interestGroup = 0;
 
-        LuxonInteropHelpers.Checked(() => NativeMethods.eventGetRoutingMetadata(Handle, out code, out senderActorId, out deliveryMode, out channel, out interestGroup));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.eventGetRoutingMetadata(
+                Handle,
+                out code,
+                out senderActorId,
+                out deliveryMode,
+                out channel,
+                out interestGroup
+            )
+        );
         return new EventRoutingMetadata(code, senderActorId, deliveryMode, channel, interestGroup);
     }
 
-    public void SetReceiversAll()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.eventSetReceiversAll(Handle));
+    public void SetReceiversAll() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.eventSetReceiversAll(Handle));
 
-    public void SetReceiversGroup(byte group)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.eventSetReceiversGroup(Handle, group));
+    public void SetReceiversGroup(byte group) =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.eventSetReceiversGroup(Handle, group));
 
     public void SetReceiversActors(ReadOnlySpan<int> actorIds)
     {
         var ids = actorIds.ToArray();
-        LuxonInteropHelpers.Checked(() => NativeMethods.eventSetReceiversActors(Handle, ids, (nuint)ids.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.eventSetReceiversActors(Handle, ids, (nuint)ids.Length)
+        );
     }
 
-    public LuxonEventReceiversType GetReceiversType()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.eventGetReceiversType(Handle));
+    public LuxonEventReceiversType GetReceiversType() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.eventGetReceiversType(Handle));
 
-    public byte GetReceiversGroup()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.eventGetReceiversGroup(Handle));
+    public byte GetReceiversGroup() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.eventGetReceiversGroup(Handle));
 
     public int[] GetReceiversActors(int maxCount = 256)
     {
@@ -298,7 +353,14 @@ public sealed class LuxonEvent : NativeResource
         var actorIds = new int[maxCount];
         nuint written = 0;
 
-        LuxonInteropHelpers.Checked(() => NativeMethods.eventGetReceiversActors(Handle, actorIds, (nuint)actorIds.Length, out written));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.eventGetReceiversActors(
+                Handle,
+                actorIds,
+                (nuint)actorIds.Length,
+                out written
+            )
+        );
 
         var actual = written > (nuint)actorIds.Length ? actorIds.Length : (int)written;
         if (actual != actorIds.Length)
@@ -309,8 +371,10 @@ public sealed class LuxonEvent : NativeResource
         return actorIds;
     }
 
-    public SerValueRef GetDataNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.eventGetData(Handle, outHandle)));
+    public SerValueRef GetDataNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() => NativeMethods.eventGetData(Handle, outHandle))
+        );
 
     public global::Luxon.Ser.Value GetData()
     {
@@ -330,8 +394,10 @@ public sealed class LuxonEvent : NativeResource
         SetData(native);
     }
 
-    public SerValueRef GetTopParamsNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.eventGetTopParams(Handle, outHandle)));
+    public SerValueRef GetTopParamsNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() => NativeMethods.eventGetTopParams(Handle, outHandle))
+        );
 
     public global::Luxon.Ser.Value GetTopParams()
     {
@@ -342,7 +408,9 @@ public sealed class LuxonEvent : NativeResource
     public void SetTopParams(SerValueRef topParams)
     {
         LuxonInteropHelpers.ThrowIfDisposed(topParams, nameof(topParams));
-        LuxonInteropHelpers.Checked(() => NativeMethods.eventSetTopParams(Handle, topParams.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.eventSetTopParams(Handle, topParams.DangerousHandle)
+        );
     }
 
     public void SetTopParams(global::Luxon.Ser.Value topParams)
@@ -351,8 +419,7 @@ public sealed class LuxonEvent : NativeResource
         SetTopParams(native);
     }
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroyEvent(handle);
+    protected override void ReleaseHandle(IntPtr handle) => NativeMethods.destroyEvent(handle);
 }
 
 public sealed class Game
@@ -394,7 +461,8 @@ public sealed class Game
         set => LuxonInteropHelpers.Checked(() => NativeMethods.gameSetMasterActor(_handle, value));
     }
 
-    public int LastActorId => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetLastActorId(_handle));
+    public int LastActorId =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gameGetLastActorId(_handle));
 
     public GameTtlConfig TtlConfig
     {
@@ -420,9 +488,11 @@ public sealed class Game
         set => SetExpectedUsers(value);
     }
 
-    public nuint PeerCount => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetPeerCount(_handle));
+    public nuint PeerCount =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gameGetPeerCount(_handle));
 
-    public ServerManager ServerManager => new(LuxonInteropHelpers.Checked(() => NativeMethods.gameGetServerManager(_handle)), false);
+    public ServerManager ServerManager =>
+        new(LuxonInteropHelpers.Checked(() => NativeMethods.gameGetServerManager(_handle)), false);
 
     public string GetId(int bufferSize = 4096)
     {
@@ -432,7 +502,9 @@ public sealed class Game
         }
 
         var buffer = new byte[bufferSize];
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameGetId(_handle, buffer, (nuint)buffer.Length));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameGetId(_handle, buffer, (nuint)buffer.Length)
+        );
         return LuxonInteropHelpers.DecodeUtf8(buffer);
     }
 
@@ -445,33 +517,70 @@ public sealed class Game
         byte maxPeers = 0;
         int masterActor = 1;
 
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameGetConfigState(_handle, out flags, out isCreated, out isOpen, out isVisible, out maxPeers, out masterActor));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameGetConfigState(
+                _handle,
+                out flags,
+                out isCreated,
+                out isOpen,
+                out isVisible,
+                out maxPeers,
+                out masterActor
+            )
+        );
         return new GameConfigState(flags, isCreated, isOpen, isVisible, maxPeers, masterActor);
     }
 
-    public void SetConfigState(GameConfigState state)
-        => SetConfigState(state.Flags, state.IsOpen, state.IsVisible, state.MaxPeers, state.MasterActor);
+    public void SetConfigState(GameConfigState state) =>
+        SetConfigState(
+            state.Flags,
+            state.IsOpen,
+            state.IsVisible,
+            state.MaxPeers,
+            state.MasterActor
+        );
 
-    public void SetConfigState(byte flags, bool isOpen, bool isVisible, byte maxPeers, int masterActor)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gameSetConfigState(_handle, flags, isOpen, isVisible, maxPeers, masterActor));
+    public void SetConfigState(
+        byte flags,
+        bool isOpen,
+        bool isVisible,
+        byte maxPeers,
+        int masterActor
+    ) =>
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameSetConfigState(
+                _handle,
+                flags,
+                isOpen,
+                isVisible,
+                maxPeers,
+                masterActor
+            )
+        );
 
     public GameTtlConfig GetTtlConfig()
     {
         int playerTtl = 0;
         int emptyTtl = 0;
 
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameGetTtlConfig(_handle, out playerTtl, out emptyTtl));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameGetTtlConfig(_handle, out playerTtl, out emptyTtl)
+        );
         return new GameTtlConfig(playerTtl, emptyTtl);
     }
 
-    public void SetTtlConfig(GameTtlConfig config)
-        => SetTtlConfig(config.PlayerTtl, config.EmptyTtl);
+    public void SetTtlConfig(GameTtlConfig config) =>
+        SetTtlConfig(config.PlayerTtl, config.EmptyTtl);
 
-    public void SetTtlConfig(int playerTtl, int emptyTtl)
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gameSetTtlConfig(_handle, playerTtl, emptyTtl));
+    public void SetTtlConfig(int playerTtl, int emptyTtl) =>
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameSetTtlConfig(_handle, playerTtl, emptyTtl)
+        );
 
-    public SerValueRef GetCustomPropertiesNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetCustomProps(_handle, outHandle)));
+    public SerValueRef GetCustomPropertiesNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() => NativeMethods.gameGetCustomProps(_handle, outHandle))
+        );
 
     public global::Luxon.Ser.Value GetCustomProperties()
     {
@@ -482,7 +591,9 @@ public sealed class Game
     public void SetCustomProperties(SerValueRef customProps)
     {
         LuxonInteropHelpers.ThrowIfDisposed(customProps, nameof(customProps));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameSetCustomProps(_handle, customProps.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameSetCustomProps(_handle, customProps.DangerousHandle)
+        );
     }
 
     public void SetCustomProperties(global::Luxon.Ser.Value customProps)
@@ -491,8 +602,12 @@ public sealed class Game
         SetCustomProperties(native);
     }
 
-    public SerValueRef GetLobbyPropertiesKeysNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetLobbyPropsToSerValue(_handle, outHandle)));
+    public SerValueRef GetLobbyPropertiesKeysNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gameGetLobbyPropsToSerValue(_handle, outHandle)
+            )
+        );
 
     public global::Luxon.Ser.Value GetLobbyPropertiesKeys()
     {
@@ -503,7 +618,9 @@ public sealed class Game
     public void SetLobbyPropertiesKeys(SerValueRef keysArray)
     {
         LuxonInteropHelpers.ThrowIfDisposed(keysArray, nameof(keysArray));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameSetLobbyPropsFromSerValue(_handle, keysArray.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameSetLobbyPropsFromSerValue(_handle, keysArray.DangerousHandle)
+        );
     }
 
     public void SetLobbyPropertiesKeys(global::Luxon.Ser.Value keysArray)
@@ -512,8 +629,12 @@ public sealed class Game
         SetLobbyPropertiesKeys(native);
     }
 
-    public SerValueRef GetExpectedUsersNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetExpectedUsersToSerValue(_handle, outHandle)));
+    public SerValueRef GetExpectedUsersNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gameGetExpectedUsersToSerValue(_handle, outHandle)
+            )
+        );
 
     public global::Luxon.Ser.Value GetExpectedUsers()
     {
@@ -524,7 +645,9 @@ public sealed class Game
     public void SetExpectedUsers(SerValueRef users)
     {
         LuxonInteropHelpers.ThrowIfDisposed(users, nameof(users));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameSetExpectedUsersFromSerValue(_handle, users.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameSetExpectedUsersFromSerValue(_handle, users.DangerousHandle)
+        );
     }
 
     public void SetExpectedUsers(global::Luxon.Ser.Value users)
@@ -548,14 +671,19 @@ public sealed class Game
     public GamePeer CreatePeer(Peer peer)
     {
         ArgumentNullException.ThrowIfNull(peer);
-        return new GamePeer(LuxonInteropHelpers.Checked(() => NativeMethods.gameCreatePeer(_handle, peer.Handle)), true);
+        return new GamePeer(
+            LuxonInteropHelpers.Checked(() => NativeMethods.gameCreatePeer(_handle, peer.Handle)),
+            true
+        );
     }
 
     public GamePeer AddPeer(GamePeer gamePeer)
     {
         LuxonInteropHelpers.ThrowIfDisposed(gamePeer, nameof(gamePeer));
 
-        var handle = LuxonInteropHelpers.Checked(() => NativeMethods.gameAddPeer(_handle, gamePeer.DangerousHandle));
+        var handle = LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameAddPeer(_handle, gamePeer.DangerousHandle)
+        );
         gamePeer.TransferOwnershipToNative();
         return new GamePeer(handle, false);
     }
@@ -563,35 +691,49 @@ public sealed class Game
     public bool RemovePeer(Peer peer)
     {
         ArgumentNullException.ThrowIfNull(peer);
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameRemovePeer(_handle, peer.Handle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameRemovePeer(_handle, peer.Handle)
+        );
     }
 
     public bool FloodPeer(GamePeer gamePeer)
     {
         LuxonInteropHelpers.ThrowIfDisposed(gamePeer, nameof(gamePeer));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameFloodPeer(_handle, gamePeer.DangerousHandle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameFloodPeer(_handle, gamePeer.DangerousHandle)
+        );
     }
 
     public GamePeer? FindPeerByActorId(int actorId)
     {
-        var handle = LuxonInteropHelpers.Checked(() => NativeMethods.gameFindPeerByActorId(_handle, actorId));
+        var handle = LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameFindPeerByActorId(_handle, actorId)
+        );
         return handle == IntPtr.Zero ? null : new GamePeer(handle, false);
     }
 
     public GamePeer? FindPeerByBasePeer(Peer peer)
     {
         ArgumentNullException.ThrowIfNull(peer);
-        var handle = LuxonInteropHelpers.Checked(() => NativeMethods.gameFindPeerByBasePeer(_handle, peer.Handle));
+        var handle = LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameFindPeerByBasePeer(_handle, peer.Handle)
+        );
         return handle == IntPtr.Zero ? null : new GamePeer(handle, false);
     }
 
     public void BroadcastEvent(LuxonEvent evt)
     {
         LuxonInteropHelpers.ThrowIfDisposed(evt, nameof(evt));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameBroadcastEvent(_handle, evt.DangerousHandle));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameBroadcastEvent(_handle, evt.DangerousHandle)
+        );
     }
 
-    public JoinValidationResult ValidateJoin(string userId, int newExpectedUsersCount = 0, int errorBufferSize = 4096)
+    public JoinValidationResult ValidateJoin(
+        string userId,
+        int newExpectedUsersCount = 0,
+        int errorBufferSize = 4096
+    )
     {
         ArgumentException.ThrowIfNullOrEmpty(userId);
 
@@ -608,24 +750,35 @@ public sealed class Game
         var errorBuffer = new byte[errorBufferSize];
         short errorCode = 0;
 
-        var allowed = LuxonInteropHelpers.Checked(() => NativeMethods.gameValidateJoin(
-            _handle,
-            userId,
-            (nuint)newExpectedUsersCount,
-            out errorCode,
-            errorBuffer,
-            (nuint)errorBuffer.Length));
+        var allowed = LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameValidateJoin(
+                _handle,
+                userId,
+                (nuint)newExpectedUsersCount,
+                out errorCode,
+                errorBuffer,
+                (nuint)errorBuffer.Length
+            )
+        );
 
-        return new JoinValidationResult(allowed, errorCode, LuxonInteropHelpers.DecodeUtf8(errorBuffer));
+        return new JoinValidationResult(
+            allowed,
+            errorCode,
+            LuxonInteropHelpers.DecodeUtf8(errorBuffer)
+        );
     }
 
-    public void TriggerLobbyUpdate()
-        => LuxonInteropHelpers.Checked(() => NativeMethods.gameTriggerLobbyUpdate(_handle));
+    public void TriggerLobbyUpdate() =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.gameTriggerLobbyUpdate(_handle));
 
     public SerValueRef GetGamePropertyNative(SerValueRef key)
     {
         LuxonInteropHelpers.ThrowIfDisposed(key, nameof(key));
-        return SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetGameProp(_handle, key.DangerousHandle, outHandle)));
+        return SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gameGetGameProp(_handle, key.DangerousHandle, outHandle)
+            )
+        );
     }
 
     public global::Luxon.Ser.Value GetGameProperty(global::Luxon.Ser.Value key)
@@ -635,8 +788,12 @@ public sealed class Game
         return nativeValue.ToManagedValue();
     }
 
-    public SerValueRef GetLobbyGamePropertiesNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetLobbyGameProps(_handle, outHandle)));
+    public SerValueRef GetLobbyGamePropertiesNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gameGetLobbyGameProps(_handle, outHandle)
+            )
+        );
 
     public global::Luxon.Ser.Value GetLobbyGameProperties()
     {
@@ -644,8 +801,12 @@ public sealed class Game
         return native.ToManagedValue();
     }
 
-    public SerValueRef GetGamePropertiesNative(bool noCustom = false)
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetGameProps(_handle, noCustom, outHandle)));
+    public SerValueRef GetGamePropertiesNative(bool noCustom = false) =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.gameGetGameProps(_handle, noCustom, outHandle)
+            )
+        );
 
     public global::Luxon.Ser.Value GetGameProperties(bool noCustom = false)
     {
@@ -653,8 +814,10 @@ public sealed class Game
         return native.ToManagedValue();
     }
 
-    public SerValueRef GetActorPropertiesNative()
-        => SerValueRef.CreatePopulated(outHandle => LuxonInteropHelpers.Checked(() => NativeMethods.gameGetActorProps(_handle, outHandle)));
+    public SerValueRef GetActorPropertiesNative() =>
+        SerValueRef.CreatePopulated(outHandle =>
+            LuxonInteropHelpers.Checked(() => NativeMethods.gameGetActorProps(_handle, outHandle))
+        );
 
     public global::Luxon.Ser.Value GetActorProperties()
     {
@@ -665,7 +828,9 @@ public sealed class Game
     public void InsertGameProperties(SerValueRef update, bool broadcast)
     {
         LuxonInteropHelpers.ThrowIfDisposed(update, nameof(update));
-        LuxonInteropHelpers.Checked(() => NativeMethods.gameInsertGameProps(_handle, update.DangerousHandle, broadcast));
+        LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameInsertGameProps(_handle, update.DangerousHandle, broadcast)
+        );
     }
 
     public void InsertGameProperties(global::Luxon.Ser.Value update, bool broadcast)
@@ -677,7 +842,9 @@ public sealed class Game
     public bool ExpectGameProperties(SerValueRef expected)
     {
         LuxonInteropHelpers.ThrowIfDisposed(expected, nameof(expected));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameExpectGameProps(_handle, expected.DangerousHandle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameExpectGameProps(_handle, expected.DangerousHandle)
+        );
     }
 
     public bool ExpectGameProperties(global::Luxon.Ser.Value expected)
@@ -689,7 +856,9 @@ public sealed class Game
     public bool InsertActorProperties(int actorId, SerValueRef update, bool broadcast)
     {
         LuxonInteropHelpers.ThrowIfDisposed(update, nameof(update));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameInsertActorProps(_handle, actorId, update.DangerousHandle, broadcast));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameInsertActorProps(_handle, actorId, update.DangerousHandle, broadcast)
+        );
     }
 
     public bool InsertActorProperties(int actorId, global::Luxon.Ser.Value update, bool broadcast)
@@ -701,7 +870,9 @@ public sealed class Game
     public bool ExpectActorProperties(int actorId, SerValueRef expected)
     {
         LuxonInteropHelpers.ThrowIfDisposed(expected, nameof(expected));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameExpectActorProps(_handle, actorId, expected.DangerousHandle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameExpectActorProps(_handle, actorId, expected.DangerousHandle)
+        );
     }
 
     public bool ExpectActorProperties(int actorId, global::Luxon.Ser.Value expected)
@@ -714,10 +885,15 @@ public sealed class Game
     {
         LuxonInteropHelpers.ThrowIfDisposed(eventData, nameof(eventData));
         LuxonInteropHelpers.ThrowIfDisposed(filter, nameof(filter));
-        return LuxonInteropHelpers.Checked(() => NativeMethods.gameMatchesFilter(eventData.DangerousHandle, filter.DangerousHandle));
+        return LuxonInteropHelpers.Checked(() =>
+            NativeMethods.gameMatchesFilter(eventData.DangerousHandle, filter.DangerousHandle)
+        );
     }
 
-    public static bool MatchesFilter(global::Luxon.Ser.Value eventData, global::Luxon.Ser.Value filter)
+    public static bool MatchesFilter(
+        global::Luxon.Ser.Value eventData,
+        global::Luxon.Ser.Value filter
+    )
     {
         using var nativeEventData = SerValueRef.FromManaged(eventData);
         using var nativeFilter = SerValueRef.FromManaged(filter);
@@ -728,14 +904,15 @@ public sealed class Game
 public sealed class Lobby : NativeResource
 {
     internal Lobby(IntPtr handle, bool ownsHandle)
-        : base(handle, ownsHandle)
-    {
-    }
+        : base(handle, ownsHandle) { }
 
     public static Lobby Create(string name, byte type)
     {
         ArgumentException.ThrowIfNullOrEmpty(name);
-        return new Lobby(LuxonInteropHelpers.Checked(() => NativeMethods.createLobby(name, type)), true);
+        return new Lobby(
+            LuxonInteropHelpers.Checked(() => NativeMethods.createLobby(name, type)),
+            true
+        );
     }
 
     public CreateGameResult CreateGame(string id, bool orGet = false)
@@ -745,8 +922,13 @@ public sealed class Lobby : NativeResource
         var errorResponse = SerMessageRef.Create();
         try
         {
-            var handle = LuxonInteropHelpers.Checked(() => NativeMethods.lobbyCreateGame(Handle, id, orGet, errorResponse.DangerousHandle));
-            return new CreateGameResult(handle == IntPtr.Zero ? null : new Game(handle), errorResponse);
+            var handle = LuxonInteropHelpers.Checked(() =>
+                NativeMethods.lobbyCreateGame(Handle, id, orGet, errorResponse.DangerousHandle)
+            );
+            return new CreateGameResult(
+                handle == IntPtr.Zero ? null : new Game(handle),
+                errorResponse
+            );
         }
         catch
         {
@@ -761,9 +943,11 @@ public sealed class Lobby : NativeResource
         return result.Game is not null;
     }
 
-    public nuint PeerCount => LuxonInteropHelpers.Checked(() => NativeMethods.lobbyGetPeerCount(Handle));
+    public nuint PeerCount =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.lobbyGetPeerCount(Handle));
 
-    public nuint MasterPeerCount => LuxonInteropHelpers.Checked(() => NativeMethods.lobbyGetMasterPeerCount(Handle));
+    public nuint MasterPeerCount =>
+        LuxonInteropHelpers.Checked(() => NativeMethods.lobbyGetMasterPeerCount(Handle));
 
     public LobbyQueryResult QueryLobbies(string sqlQueries, int bufferSize = 65536)
     {
@@ -777,18 +961,20 @@ public sealed class Lobby : NativeResource
         var buffer = new byte[bufferSize];
         nuint written = 0;
 
-        var success = LuxonInteropHelpers.Checked(() => NativeMethods.lobbyQueryLobbies(
-            Handle,
-            sqlQueries,
-            buffer,
-            (nuint)buffer.Length,
-            out written));
+        var success = LuxonInteropHelpers.Checked(() =>
+            NativeMethods.lobbyQueryLobbies(
+                Handle,
+                sqlQueries,
+                buffer,
+                (nuint)buffer.Length,
+                out written
+            )
+        );
 
         return new LobbyQueryResult(success, LuxonInteropHelpers.DecodeUtf8(buffer, written));
     }
 
-    protected override void ReleaseHandle(IntPtr handle)
-        => NativeMethods.destroyLobby(handle);
+    protected override void ReleaseHandle(IntPtr handle) => NativeMethods.destroyLobby(handle);
 }
 
 public sealed class HandlerBase
@@ -809,6 +995,9 @@ public sealed class HandlerBase
 
     public IntPtr DangerousHandle => _handle;
 
-    public ServerManager ServerManager
-        => new(LuxonInteropHelpers.Checked(() => NativeMethods.handlerBaseGetServerManager(_handle)), false);
+    public ServerManager ServerManager =>
+        new(
+            LuxonInteropHelpers.Checked(() => NativeMethods.handlerBaseGetServerManager(_handle)),
+            false
+        );
 }

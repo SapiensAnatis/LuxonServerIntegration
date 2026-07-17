@@ -39,9 +39,11 @@
   </PropertyGroup>
 
   <Target Name="StagePlugins" AfterTargets="Build">
-    <MSBuild Projects="..\Luxon.Server.GluonPlugin\Luxon.Server.GluonPlugin.csproj"
-             Targets="GetTargetPath"
-             Properties="Configuration=$(Configuration)">
+    <MSBuild
+      Projects="..\Luxon.Server.GluonPlugin\Luxon.Server.GluonPlugin.csproj"
+      Targets="GetTargetPath"
+      Properties="Configuration=$(Configuration)"
+    >
       <Output TaskParameter="TargetOutputs" ItemName="_PluginTarget" />
     </MSBuild>
 
@@ -54,9 +56,11 @@
       <_PluginFiles Include="$(_PluginOutDir)\**\*" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(_PluginFiles)"
-          DestinationFiles="@(_PluginFiles->'$(_PluginStageDir)%(RecursiveDir)%(Filename)%(Extension)')"
-          SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(_PluginFiles)"
+      DestinationFiles="@(_PluginFiles->'$(_PluginStageDir)%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true"
+    />
   </Target>
 
   <ItemGroup>

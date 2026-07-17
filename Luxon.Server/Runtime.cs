@@ -5,20 +5,94 @@ using Luxon.Server.Interop;
 namespace Luxon.Server;
 
 public delegate void GamePluginOnAttachDelegate(uint pluginId, Game game);
-public delegate LuxonGamePluginResult GamePluginOnCreateGameDelegate(uint pluginId, Game game, SerMessageRef request, Peer creator, bool isJoin, bool createIfNotExist);
-public delegate LuxonGamePluginResult GamePluginBeforeJoinDelegate(uint pluginId, Game game, SerMessageRef request, Peer joiner);
-public delegate LuxonGamePluginResult GamePluginOnJoinGameDelegate(uint pluginId, Game game, SerMessageRef request, GamePeer joiner);
-public delegate LuxonGamePluginResult GamePluginOnLeaveDelegate(uint pluginId, Game game, SerMessageRef request, GamePeer leaver);
-public delegate LuxonGamePluginResult GamePluginOnRaiseEventDelegate(uint pluginId, Game game, SerMessageRef request, GamePeer raiser, LuxonEvent evt, byte cacheOp);
-public delegate LuxonGamePluginResult GamePluginBeforeSetPropertiesDelegate(uint pluginId, Game game, SerMessageRef request, GamePeer setter, bool broadcast, int targetActorId, SerValueRef update, SerValueRef expected);
-public delegate LuxonGamePluginResult GamePluginOnSetPropertiesDelegate(uint pluginId, Game game, SerMessageRef request, GamePeer setter, bool broadcast, int targetActorId, SerValueRef update, SerValueRef expected);
-public delegate LuxonGamePluginResult GamePluginBeforeCloseGameDelegate(uint pluginId, Game game, bool failedOnCreate);
-public delegate LuxonGamePluginResult GamePluginOnCloseGameDelegate(uint pluginId, Game game, bool failedOnCreate);
-public delegate bool AuthPluginOnAuthenticateDelegate(uint type, string? requestedUserId, string? parameters, string? data, string? secret, string? authUrl, out string? userId, SerMessageRef errorResponse);
+public delegate LuxonGamePluginResult GamePluginOnCreateGameDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    Peer creator,
+    bool isJoin,
+    bool createIfNotExist
+);
+public delegate LuxonGamePluginResult GamePluginBeforeJoinDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    Peer joiner
+);
+public delegate LuxonGamePluginResult GamePluginOnJoinGameDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    GamePeer joiner
+);
+public delegate LuxonGamePluginResult GamePluginOnLeaveDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    GamePeer leaver
+);
+public delegate LuxonGamePluginResult GamePluginOnRaiseEventDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    GamePeer raiser,
+    LuxonEvent evt,
+    byte cacheOp
+);
+public delegate LuxonGamePluginResult GamePluginBeforeSetPropertiesDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    GamePeer setter,
+    bool broadcast,
+    int targetActorId,
+    SerValueRef update,
+    SerValueRef expected
+);
+public delegate LuxonGamePluginResult GamePluginOnSetPropertiesDelegate(
+    uint pluginId,
+    Game game,
+    SerMessageRef request,
+    GamePeer setter,
+    bool broadcast,
+    int targetActorId,
+    SerValueRef update,
+    SerValueRef expected
+);
+public delegate LuxonGamePluginResult GamePluginBeforeCloseGameDelegate(
+    uint pluginId,
+    Game game,
+    bool failedOnCreate
+);
+public delegate LuxonGamePluginResult GamePluginOnCloseGameDelegate(
+    uint pluginId,
+    Game game,
+    bool failedOnCreate
+);
+public delegate bool AuthPluginOnAuthenticateDelegate(
+    uint type,
+    string? requestedUserId,
+    string? parameters,
+    string? data,
+    string? secret,
+    string? authUrl,
+    out string? userId,
+    SerMessageRef errorResponse
+);
 public delegate void CustomLogSinkDelegate(LuxonLogLevel level, string message);
-public delegate bool HookpointMasterServerHandleOperationRequestJoinGameDelegate(HandlerBase handler, string gameId, bool isJoin);
-public delegate bool HookpointMasterServerHandleOperationRequestCreateGameDelegate(HandlerBase handler, string gameId);
-public delegate bool HookpointHandlerBaseHandleENetCommandOnMessageDelegate(HandlerBase handler, SerMessageRef message);
+public delegate bool HookpointMasterServerHandleOperationRequestJoinGameDelegate(
+    HandlerBase handler,
+    string gameId,
+    bool isJoin
+);
+public delegate bool HookpointMasterServerHandleOperationRequestCreateGameDelegate(
+    HandlerBase handler,
+    string gameId
+);
+public delegate bool HookpointHandlerBaseHandleENetCommandOnMessageDelegate(
+    HandlerBase handler,
+    SerMessageRef message
+);
 public delegate bool HookpointAppLoadAppSettingsDelegate(IntPtr app, out bool success);
 
 public sealed class LuxonServerImports
@@ -47,40 +121,109 @@ public sealed class LuxonServerImportsRegistration : IDisposable
     private delegate void NativeGamePluginOnAttachDelegate(uint pluginId, IntPtr game);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnCreateGameDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr creator, byte isJoin, byte createIfNotExist);
+    private delegate byte NativeGamePluginOnCreateGameDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr creator,
+        byte isJoin,
+        byte createIfNotExist
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginBeforeJoinDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr joiner);
+    private delegate byte NativeGamePluginBeforeJoinDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr joiner
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnJoinGameDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr joiner);
+    private delegate byte NativeGamePluginOnJoinGameDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr joiner
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnLeaveDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr leaver);
+    private delegate byte NativeGamePluginOnLeaveDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr leaver
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnRaiseEventDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr raiser, IntPtr evt, byte cacheOp);
+    private delegate byte NativeGamePluginOnRaiseEventDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr raiser,
+        IntPtr evt,
+        byte cacheOp
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginBeforeSetPropertiesDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr setter, byte broadcast, int targetActorId, IntPtr update, IntPtr expected);
+    private delegate byte NativeGamePluginBeforeSetPropertiesDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr setter,
+        byte broadcast,
+        int targetActorId,
+        IntPtr update,
+        IntPtr expected
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnSetPropertiesDelegate(uint pluginId, IntPtr game, IntPtr request, IntPtr setter, byte broadcast, int targetActorId, IntPtr update, IntPtr expected);
+    private delegate byte NativeGamePluginOnSetPropertiesDelegate(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr setter,
+        byte broadcast,
+        int targetActorId,
+        IntPtr update,
+        IntPtr expected
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginBeforeCloseGameDelegate(uint pluginId, IntPtr game, byte failedOnCreate);
+    private delegate byte NativeGamePluginBeforeCloseGameDelegate(
+        uint pluginId,
+        IntPtr game,
+        byte failedOnCreate
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeGamePluginOnCloseGameDelegate(uint pluginId, IntPtr game, byte failedOnCreate);
+    private delegate byte NativeGamePluginOnCloseGameDelegate(
+        uint pluginId,
+        IntPtr game,
+        byte failedOnCreate
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeAuthPluginOnAuthenticateDelegate(uint type, IntPtr requestedUserId, IntPtr parameters, IntPtr data, IntPtr secret, IntPtr authUrl, IntPtr outUserId, nuint maxUserIdLen, IntPtr outErrResp);
+    private delegate byte NativeAuthPluginOnAuthenticateDelegate(
+        uint type,
+        IntPtr requestedUserId,
+        IntPtr parameters,
+        IntPtr data,
+        IntPtr secret,
+        IntPtr authUrl,
+        IntPtr outUserId,
+        nuint maxUserIdLen,
+        IntPtr outErrResp
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate void NativeCustomLogSinkDelegate(int level, IntPtr message);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate byte NativeHookpointJoinGameDelegate(IntPtr handler, IntPtr gameId, byte isJoin);
+    private delegate byte NativeHookpointJoinGameDelegate(
+        IntPtr handler,
+        IntPtr gameId,
+        byte isJoin
+    );
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     private delegate byte NativeHookpointCreateGameDelegate(IntPtr handler, IntPtr gameId);
@@ -117,21 +260,49 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         _imports = imports ?? throw new ArgumentNullException(nameof(imports));
 
         _gamePluginOnAttachThunk = imports.GamePluginOnAttach is null ? null : OnGamePluginOnAttach;
-        _gamePluginOnCreateGameThunk = imports.GamePluginOnCreateGame is null ? null : OnGamePluginOnCreateGame;
-        _gamePluginBeforeJoinThunk = imports.GamePluginBeforeJoin is null ? null : OnGamePluginBeforeJoin;
-        _gamePluginOnJoinGameThunk = imports.GamePluginOnJoinGame is null ? null : OnGamePluginOnJoinGame;
+        _gamePluginOnCreateGameThunk = imports.GamePluginOnCreateGame is null
+            ? null
+            : OnGamePluginOnCreateGame;
+        _gamePluginBeforeJoinThunk = imports.GamePluginBeforeJoin is null
+            ? null
+            : OnGamePluginBeforeJoin;
+        _gamePluginOnJoinGameThunk = imports.GamePluginOnJoinGame is null
+            ? null
+            : OnGamePluginOnJoinGame;
         _gamePluginOnLeaveThunk = imports.GamePluginOnLeave is null ? null : OnGamePluginOnLeave;
-        _gamePluginOnRaiseEventThunk = imports.GamePluginOnRaiseEvent is null ? null : OnGamePluginOnRaiseEvent;
-        _gamePluginBeforeSetPropertiesThunk = imports.GamePluginBeforeSetProperties is null ? null : OnGamePluginBeforeSetProperties;
-        _gamePluginOnSetPropertiesThunk = imports.GamePluginOnSetProperties is null ? null : OnGamePluginOnSetProperties;
-        _gamePluginBeforeCloseGameThunk = imports.GamePluginBeforeCloseGame is null ? null : OnGamePluginBeforeCloseGame;
-        _gamePluginOnCloseGameThunk = imports.GamePluginOnCloseGame is null ? null : OnGamePluginOnCloseGame;
-        _authPluginOnAuthenticateThunk = imports.AuthPluginOnAuthenticate is null ? null : OnAuthPluginOnAuthenticate;
+        _gamePluginOnRaiseEventThunk = imports.GamePluginOnRaiseEvent is null
+            ? null
+            : OnGamePluginOnRaiseEvent;
+        _gamePluginBeforeSetPropertiesThunk = imports.GamePluginBeforeSetProperties is null
+            ? null
+            : OnGamePluginBeforeSetProperties;
+        _gamePluginOnSetPropertiesThunk = imports.GamePluginOnSetProperties is null
+            ? null
+            : OnGamePluginOnSetProperties;
+        _gamePluginBeforeCloseGameThunk = imports.GamePluginBeforeCloseGame is null
+            ? null
+            : OnGamePluginBeforeCloseGame;
+        _gamePluginOnCloseGameThunk = imports.GamePluginOnCloseGame is null
+            ? null
+            : OnGamePluginOnCloseGame;
+        _authPluginOnAuthenticateThunk = imports.AuthPluginOnAuthenticate is null
+            ? null
+            : OnAuthPluginOnAuthenticate;
         _customLogSinkThunk = imports.CustomLogSink is null ? null : OnCustomLogSink;
-        _hookpointJoinGameThunk = imports.HookpointMasterServerHandleOperationRequestJoinGame is null ? null : OnHookpointJoinGame;
-        _hookpointCreateGameThunk = imports.HookpointMasterServerHandleOperationRequestCreateGame is null ? null : OnHookpointCreateGame;
-        _hookpointOnMessageThunk = imports.HookpointHandlerBaseHandleENetCommandOnMessage is null ? null : OnHookpointOnMessage;
-        _hookpointAppLoadAppSettingsThunk = imports.HookpointAppLoadAppSettings is null ? null : OnHookpointAppLoadAppSettings;
+        _hookpointJoinGameThunk = imports.HookpointMasterServerHandleOperationRequestJoinGame
+            is null
+            ? null
+            : OnHookpointJoinGame;
+        _hookpointCreateGameThunk = imports.HookpointMasterServerHandleOperationRequestCreateGame
+            is null
+            ? null
+            : OnHookpointCreateGame;
+        _hookpointOnMessageThunk = imports.HookpointHandlerBaseHandleENetCommandOnMessage is null
+            ? null
+            : OnHookpointOnMessage;
+        _hookpointAppLoadAppSettingsThunk = imports.HookpointAppLoadAppSettings is null
+            ? null
+            : OnHookpointAppLoadAppSettings;
 
         _nativeImports = new NativeImportsStruct
         {
@@ -147,10 +318,14 @@ public sealed class LuxonServerImportsRegistration : IDisposable
             gamePluginOnCloseGame = ToPointer(_gamePluginOnCloseGameThunk),
             authPluginOnAuthenticate = ToPointer(_authPluginOnAuthenticateThunk),
             customLogSink = ToPointer(_customLogSinkThunk),
-            hookpointMasterServerHandleOperationRequestJoinGame = ToPointer(_hookpointJoinGameThunk),
-            hookpointMasterServerHandleOperationRequestCreateGame = ToPointer(_hookpointCreateGameThunk),
+            hookpointMasterServerHandleOperationRequestJoinGame = ToPointer(
+                _hookpointJoinGameThunk
+            ),
+            hookpointMasterServerHandleOperationRequestCreateGame = ToPointer(
+                _hookpointCreateGameThunk
+            ),
             hookpointHandlerBaseHandleENetCommandOnMessage = ToPointer(_hookpointOnMessageThunk),
-            hookpointAppLoadAppSettings = ToPointer(_hookpointAppLoadAppSettingsThunk)
+            hookpointAppLoadAppSettings = ToPointer(_hookpointAppLoadAppSettingsThunk),
         };
     }
 
@@ -177,8 +352,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         LuxonServerRuntime.ReleaseRegistration(this);
     }
 
-    private static IntPtr ToPointer(Delegate? value)
-        => value is null ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(value);
+    private static IntPtr ToPointer(Delegate? value) =>
+        value is null ? IntPtr.Zero : Marshal.GetFunctionPointerForDelegate(value);
 
     private void OnGamePluginOnAttach(uint pluginId, IntPtr game)
     {
@@ -192,7 +367,14 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         }
     }
 
-    private byte OnGamePluginOnCreateGame(uint pluginId, IntPtr game, IntPtr request, IntPtr creator, byte isJoin, byte createIfNotExist)
+    private byte OnGamePluginOnCreateGame(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr creator,
+        byte isJoin,
+        byte createIfNotExist
+    )
     {
         try
         {
@@ -208,7 +390,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 new SerMessageRef(request, false),
                 new Peer(creator),
                 LuxonInteropHelpers.ByteToBool(isJoin),
-                LuxonInteropHelpers.ByteToBool(createIfNotExist));
+                LuxonInteropHelpers.ByteToBool(createIfNotExist)
+            );
 
             return (byte)result;
         }
@@ -229,7 +412,12 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return (byte)LuxonGamePluginResult.Continue;
             }
 
-            return (byte)callback(pluginId, new Game(game), new SerMessageRef(request, false), new Peer(joiner));
+            return (byte)callback(
+                pluginId,
+                new Game(game),
+                new SerMessageRef(request, false),
+                new Peer(joiner)
+            );
         }
         catch (Exception ex)
         {
@@ -248,7 +436,12 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return (byte)LuxonGamePluginResult.Continue;
             }
 
-            return (byte)callback(pluginId, new Game(game), new SerMessageRef(request, false), new GamePeer(joiner, false));
+            return (byte)callback(
+                pluginId,
+                new Game(game),
+                new SerMessageRef(request, false),
+                new GamePeer(joiner, false)
+            );
         }
         catch (Exception ex)
         {
@@ -267,7 +460,12 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return (byte)LuxonGamePluginResult.Continue;
             }
 
-            return (byte)callback(pluginId, new Game(game), new SerMessageRef(request, false), new GamePeer(leaver, false));
+            return (byte)callback(
+                pluginId,
+                new Game(game),
+                new SerMessageRef(request, false),
+                new GamePeer(leaver, false)
+            );
         }
         catch (Exception ex)
         {
@@ -276,7 +474,14 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         }
     }
 
-    private byte OnGamePluginOnRaiseEvent(uint pluginId, IntPtr game, IntPtr request, IntPtr raiser, IntPtr evt, byte cacheOp)
+    private byte OnGamePluginOnRaiseEvent(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr raiser,
+        IntPtr evt,
+        byte cacheOp
+    )
     {
         try
         {
@@ -292,7 +497,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 new SerMessageRef(request, false),
                 new GamePeer(raiser, false),
                 new LuxonEvent(evt, false),
-                cacheOp);
+                cacheOp
+            );
         }
         catch (Exception ex)
         {
@@ -301,7 +507,16 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         }
     }
 
-    private byte OnGamePluginBeforeSetProperties(uint pluginId, IntPtr game, IntPtr request, IntPtr setter, byte broadcast, int targetActorId, IntPtr update, IntPtr expected)
+    private byte OnGamePluginBeforeSetProperties(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr setter,
+        byte broadcast,
+        int targetActorId,
+        IntPtr update,
+        IntPtr expected
+    )
     {
         try
         {
@@ -319,7 +534,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 LuxonInteropHelpers.ByteToBool(broadcast),
                 targetActorId,
                 new SerValueRef(update, false),
-                new SerValueRef(expected, false));
+                new SerValueRef(expected, false)
+            );
         }
         catch (Exception ex)
         {
@@ -328,7 +544,16 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         }
     }
 
-    private byte OnGamePluginOnSetProperties(uint pluginId, IntPtr game, IntPtr request, IntPtr setter, byte broadcast, int targetActorId, IntPtr update, IntPtr expected)
+    private byte OnGamePluginOnSetProperties(
+        uint pluginId,
+        IntPtr game,
+        IntPtr request,
+        IntPtr setter,
+        byte broadcast,
+        int targetActorId,
+        IntPtr update,
+        IntPtr expected
+    )
     {
         try
         {
@@ -346,7 +571,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 LuxonInteropHelpers.ByteToBool(broadcast),
                 targetActorId,
                 new SerValueRef(update, false),
-                new SerValueRef(expected, false));
+                new SerValueRef(expected, false)
+            );
         }
         catch (Exception ex)
         {
@@ -365,7 +591,11 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return (byte)LuxonGamePluginResult.Continue;
             }
 
-            return (byte)callback(pluginId, new Game(game), LuxonInteropHelpers.ByteToBool(failedOnCreate));
+            return (byte)callback(
+                pluginId,
+                new Game(game),
+                LuxonInteropHelpers.ByteToBool(failedOnCreate)
+            );
         }
         catch (Exception ex)
         {
@@ -384,7 +614,11 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return (byte)LuxonGamePluginResult.Continue;
             }
 
-            return (byte)callback(pluginId, new Game(game), LuxonInteropHelpers.ByteToBool(failedOnCreate));
+            return (byte)callback(
+                pluginId,
+                new Game(game),
+                LuxonInteropHelpers.ByteToBool(failedOnCreate)
+            );
         }
         catch (Exception ex)
         {
@@ -393,7 +627,17 @@ public sealed class LuxonServerImportsRegistration : IDisposable
         }
     }
 
-    private byte OnAuthPluginOnAuthenticate(uint type, IntPtr requestedUserId, IntPtr parameters, IntPtr data, IntPtr secret, IntPtr authUrl, IntPtr outUserId, nuint maxUserIdLen, IntPtr outErrResp)
+    private byte OnAuthPluginOnAuthenticate(
+        uint type,
+        IntPtr requestedUserId,
+        IntPtr parameters,
+        IntPtr data,
+        IntPtr secret,
+        IntPtr authUrl,
+        IntPtr outUserId,
+        nuint maxUserIdLen,
+        IntPtr outErrResp
+    )
     {
         try
         {
@@ -412,7 +656,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 LuxonInteropHelpers.PtrToUtf8String(secret),
                 LuxonInteropHelpers.PtrToUtf8String(authUrl),
                 out var userId,
-                new SerMessageRef(outErrResp, false));
+                new SerMessageRef(outErrResp, false)
+            );
 
             LuxonInteropHelpers.WriteUtf8CString(userId, outUserId, maxUserIdLen);
             return LuxonInteropHelpers.BoolToByte(ok);
@@ -429,7 +674,10 @@ public sealed class LuxonServerImportsRegistration : IDisposable
     {
         try
         {
-            _imports.CustomLogSink?.Invoke((LuxonLogLevel)level, LuxonInteropHelpers.PtrToUtf8String(message));
+            _imports.CustomLogSink?.Invoke(
+                (LuxonLogLevel)level,
+                LuxonInteropHelpers.PtrToUtf8String(message)
+            );
         }
         catch (Exception ex)
         {
@@ -450,7 +698,8 @@ public sealed class LuxonServerImportsRegistration : IDisposable
             var handled = callback(
                 new HandlerBase(handler),
                 LuxonInteropHelpers.PtrToUtf8String(gameId),
-                LuxonInteropHelpers.ByteToBool(isJoin));
+                LuxonInteropHelpers.ByteToBool(isJoin)
+            );
 
             return LuxonInteropHelpers.BoolToByte(handled);
         }
@@ -471,7 +720,10 @@ public sealed class LuxonServerImportsRegistration : IDisposable
                 return 0;
             }
 
-            var handled = callback(new HandlerBase(handler), LuxonInteropHelpers.PtrToUtf8String(gameId));
+            var handled = callback(
+                new HandlerBase(handler),
+                LuxonInteropHelpers.PtrToUtf8String(gameId)
+            );
             return LuxonInteropHelpers.BoolToByte(handled);
         }
         catch (Exception ex)
@@ -534,11 +786,11 @@ public static class LuxonServerRuntime
 
     public static string NativeLibraryName => NativeMethods.LibraryName;
 
-    public static void UseCustomNativeLibraryPath(string path)
-        => LuxonNativeLibrary.SetCustomLibraryPath(path);
+    public static void UseCustomNativeLibraryPath(string path) =>
+        LuxonNativeLibrary.SetCustomLibraryPath(path);
 
-    public static void ClearCustomNativeLibraryPath()
-        => LuxonNativeLibrary.ClearCustomLibraryPath();
+    public static void ClearCustomNativeLibraryPath() =>
+        LuxonNativeLibrary.ClearCustomLibraryPath();
 
     public static LuxonServerImportsRegistration SetImports(LuxonServerImports imports)
     {
@@ -609,7 +861,9 @@ public static class LuxonServerRuntime
 
         try
         {
-            LuxonInteropHelpers.Checked(() => NativeMethods.registerHookpoints(manager.DangerousHandle));
+            LuxonInteropHelpers.Checked(() =>
+                NativeMethods.registerHookpoints(manager.DangerousHandle)
+            );
         }
         catch (EntryPointNotFoundException ex)
         {
@@ -638,9 +892,7 @@ public static class LuxonServerRuntime
         {
             UnhandledCallbackException?.Invoke(ex);
         }
-        catch
-        {
-        }
+        catch { }
 
         Trace.TraceError(ex.ToString());
     }

@@ -31,7 +31,11 @@ public static class LuxonNativeLibrary
         _ = typeof(LuxonNativeLibrary);
     }
 
-    private static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+    private static IntPtr Resolve(
+        string libraryName,
+        Assembly assembly,
+        DllImportSearchPath? searchPath
+    )
     {
         if (!string.Equals(libraryName, NativeMethods.LibraryName, StringComparison.Ordinal))
         {
@@ -39,8 +43,10 @@ public static class LuxonNativeLibrary
         }
 
         var customLibraryPath = s_customLibraryPath;
-        if (!string.IsNullOrWhiteSpace(customLibraryPath) &&
-            NativeLibrary.TryLoad(customLibraryPath, out var handle))
+        if (
+            !string.IsNullOrWhiteSpace(customLibraryPath)
+            && NativeLibrary.TryLoad(customLibraryPath, out var handle)
+        )
         {
             return handle;
         }

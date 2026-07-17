@@ -87,28 +87,48 @@ internal static class NativeMethods
     internal static extern void luxonEnableCustomLogSink([MarshalAs(UnmanagedType.I1)] bool enable);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr getOrCreateLogger([MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+    internal static extern IntPtr getOrCreateLogger(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string name
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void setLoggerLevel(IntPtr logger, int level);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerTrace(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerTrace(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerDebug(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerDebug(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerInfo(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerInfo(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerWarn(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerWarn(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerError(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerError(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void loggerCritical(IntPtr logger, [MarshalAs(UnmanagedType.LPUTF8Str)] string message);
+    internal static extern void loggerCritical(
+        IntPtr logger,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string message
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -118,7 +138,13 @@ internal static class NativeMethods
     internal static extern LuxonServerProtocol peerGetTransportProtocol(IntPtr peer);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void peerSend(IntPtr peer, byte[] payload, nuint length, byte channel, LuxonDeliveryMode delivery_mode);
+    internal static extern void peerSend(
+        IntPtr peer,
+        byte[] payload,
+        nuint length,
+        byte channel,
+        LuxonDeliveryMode delivery_mode
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void peerDisconnect(IntPtr peer);
@@ -147,13 +173,25 @@ internal static class NativeMethods
     internal static extern bool gamePeerHasInterestGroup(IntPtr game_peer, byte group);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gamePeerSetInterestGroup(IntPtr game_peer, byte group, [MarshalAs(UnmanagedType.I1)] bool enable);
+    internal static extern void gamePeerSetInterestGroup(
+        IntPtr game_peer,
+        byte group,
+        [MarshalAs(UnmanagedType.I1)] bool enable
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gamePeerGetInterestGroupsMask(IntPtr game_peer, uint[] out_mask_words, nuint max_words);
+    internal static extern void gamePeerGetInterestGroupsMask(
+        IntPtr game_peer,
+        uint[] out_mask_words,
+        nuint max_words
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gamePeerSetInterestGroupsMask(IntPtr game_peer, uint[] mask_words, nuint word_count);
+    internal static extern void gamePeerSetInterestGroupsMask(
+        IntPtr game_peer,
+        uint[] mask_words,
+        nuint word_count
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void gamePeerGetActorProps(IntPtr game_peer, IntPtr out_props);
@@ -175,10 +213,24 @@ internal static class NativeMethods
     internal static extern void destroyEvent(IntPtr event_handle);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void eventSetRoutingMetadata(IntPtr event_handle, byte code, int sender_actor_id, LuxonDeliveryMode delivery_mode, byte channel, byte interest_group);
+    internal static extern void eventSetRoutingMetadata(
+        IntPtr event_handle,
+        byte code,
+        int sender_actor_id,
+        LuxonDeliveryMode delivery_mode,
+        byte channel,
+        byte interest_group
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void eventGetRoutingMetadata(IntPtr event_handle, out byte out_code, out int out_sender_id, out LuxonDeliveryMode out_mode, out byte out_channel, out byte out_group);
+    internal static extern void eventGetRoutingMetadata(
+        IntPtr event_handle,
+        out byte out_code,
+        out int out_sender_id,
+        out LuxonDeliveryMode out_mode,
+        out byte out_channel,
+        out byte out_group
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void eventSetReceiversAll(IntPtr event_handle);
@@ -187,7 +239,11 @@ internal static class NativeMethods
     internal static extern void eventSetReceiversGroup(IntPtr event_handle, byte group);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void eventSetReceiversActors(IntPtr event_handle, int[] actor_ids, nuint count);
+    internal static extern void eventSetReceiversActors(
+        IntPtr event_handle,
+        int[] actor_ids,
+        nuint count
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern LuxonEventReceiversType eventGetReceiversType(IntPtr event_handle);
@@ -196,7 +252,12 @@ internal static class NativeMethods
     internal static extern byte eventGetReceiversGroup(IntPtr event_handle);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void eventGetReceiversActors(IntPtr event_handle, int[] out_actor_ids, nuint max_count, out nuint out_written);
+    internal static extern void eventGetReceiversActors(
+        IntPtr event_handle,
+        int[] out_actor_ids,
+        nuint max_count,
+        out nuint out_written
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void eventSetData(IntPtr event_handle, IntPtr data);
@@ -221,7 +282,8 @@ internal static class NativeMethods
         [MarshalAs(UnmanagedType.I1)] out bool out_is_open,
         [MarshalAs(UnmanagedType.I1)] out bool out_is_visible,
         out byte out_max_peers,
-        out int out_master_actor);
+        out int out_master_actor
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void gameSetConfigState(
@@ -230,7 +292,8 @@ internal static class NativeMethods
         [MarshalAs(UnmanagedType.I1)] bool is_open,
         [MarshalAs(UnmanagedType.I1)] bool is_visible,
         byte max_peers,
-        int master_actor);
+        int master_actor
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern int gameGetMasterActor(IntPtr game);
@@ -248,7 +311,11 @@ internal static class NativeMethods
     internal static extern void gameSetMaxPeers(IntPtr game, byte max_peers);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gameGetTtlConfig(IntPtr game, out int out_player_ttl, out int out_empty_ttl);
+    internal static extern void gameGetTtlConfig(
+        IntPtr game,
+        out int out_player_ttl,
+        out int out_empty_ttl
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void gameSetTtlConfig(IntPtr game, int player_ttl, int empty_ttl);
@@ -272,10 +339,16 @@ internal static class NativeMethods
     internal static extern void gameSetExpectedUsersFromSerValue(IntPtr game, IntPtr list);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gameAddExpectedUser(IntPtr game, [MarshalAs(UnmanagedType.LPUTF8Str)] string user_id);
+    internal static extern void gameAddExpectedUser(
+        IntPtr game,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string user_id
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gameRemoveExpectedUser(IntPtr game, [MarshalAs(UnmanagedType.LPUTF8Str)] string user_id);
+    internal static extern void gameRemoveExpectedUser(
+        IntPtr game,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string user_id
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern nuint gameGetPeerCount(IntPtr game);
@@ -311,7 +384,8 @@ internal static class NativeMethods
         nuint new_expected_users_count,
         out short out_err_code,
         byte[] out_err_str,
-        nuint max_err_len);
+        nuint max_err_len
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void gameTriggerLobbyUpdate(IntPtr game);
@@ -323,7 +397,11 @@ internal static class NativeMethods
     internal static extern void gameGetLobbyGameProps(IntPtr game, IntPtr out_hashtable);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void gameGetGameProps(IntPtr game, [MarshalAs(UnmanagedType.I1)] bool no_custom, IntPtr out_hashtable);
+    internal static extern void gameGetGameProps(
+        IntPtr game,
+        [MarshalAs(UnmanagedType.I1)] bool no_custom,
+        IntPtr out_hashtable
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void gameGetActorProps(IntPtr game, IntPtr out_hashtable);
@@ -337,7 +415,12 @@ internal static class NativeMethods
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool gameInsertActorProps(IntPtr game, int actor_id, IntPtr update, bool broadcast);
+    internal static extern bool gameInsertActorProps(
+        IntPtr game,
+        int actor_id,
+        IntPtr update,
+        bool broadcast
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.I1)]
@@ -348,13 +431,21 @@ internal static class NativeMethods
     internal static extern bool gameMatchesFilter(IntPtr event_data, IntPtr filter);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr createLobby([MarshalAs(UnmanagedType.LPUTF8Str)] string name, byte type);
+    internal static extern IntPtr createLobby(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string name,
+        byte type
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void destroyLobby(IntPtr lobby);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr lobbyCreateGame(IntPtr lobby, [MarshalAs(UnmanagedType.LPUTF8Str)] string id, [MarshalAs(UnmanagedType.I1)] bool or_get, IntPtr out_err_resp);
+    internal static extern IntPtr lobbyCreateGame(
+        IntPtr lobby,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string id,
+        [MarshalAs(UnmanagedType.I1)] bool or_get,
+        IntPtr out_err_resp
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern nuint lobbyGetPeerCount(IntPtr lobby);
@@ -369,7 +460,8 @@ internal static class NativeMethods
         [MarshalAs(UnmanagedType.LPUTF8Str)] string sql_queries,
         byte[] out_buf,
         nuint max_len,
-        out nuint out_written);
+        out nuint out_written
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern IntPtr createServerManagerConfig();
@@ -378,28 +470,59 @@ internal static class NativeMethods
     internal static extern void destroyServerManagerConfig(IntPtr config);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr loadServerManagerConfigFromFile([MarshalAs(UnmanagedType.LPUTF8Str)] string config_file_path);
+    internal static extern IntPtr loadServerManagerConfigFromFile(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string config_file_path
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr parseServerManagerConfig([MarshalAs(UnmanagedType.LPUTF8Str)] string yaml_config_contents);
+    internal static extern IntPtr parseServerManagerConfig(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string yaml_config_contents
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigAddServer(IntPtr config, LuxonServerType type, ushort port);
+    internal static extern void serverManagerConfigAddServer(
+        IntPtr config,
+        LuxonServerType type,
+        ushort port
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigAddServerAndEndpoint(IntPtr config, LuxonServerType type, ushort port, [MarshalAs(UnmanagedType.LPUTF8Str)] string external_udp_address);
+    internal static extern void serverManagerConfigAddServerAndEndpoint(
+        IntPtr config,
+        LuxonServerType type,
+        ushort port,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string external_udp_address
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigAddEndpoint(IntPtr config, LuxonServerType type, LuxonServerProtocol protocol, [MarshalAs(UnmanagedType.LPUTF8Str)] string address);
+    internal static extern void serverManagerConfigAddEndpoint(
+        IntPtr config,
+        LuxonServerType type,
+        LuxonServerProtocol protocol,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string address
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigSetLimits(IntPtr config, [MarshalAs(UnmanagedType.I1)] bool enable_ipv6, uint max_connections, uint max_game_peers, uint tick_time_budget);
+    internal static extern void serverManagerConfigSetLimits(
+        IntPtr config,
+        [MarshalAs(UnmanagedType.I1)] bool enable_ipv6,
+        uint max_connections,
+        uint max_game_peers,
+        uint tick_time_budget
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigSetSettingsDatabasePath(IntPtr config, [MarshalAs(UnmanagedType.LPUTF8Str)] string path);
+    internal static extern void serverManagerConfigSetSettingsDatabasePath(
+        IntPtr config,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string path
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern void serverManagerConfigEnableHttp(IntPtr config, [MarshalAs(UnmanagedType.LPUTF8Str)] string address, ushort port);
+    internal static extern void serverManagerConfigEnableHttp(
+        IntPtr config,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string address,
+        ushort port
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void serverManagerConfigDisableHttp(IntPtr config);
@@ -408,10 +531,14 @@ internal static class NativeMethods
     internal static extern IntPtr createServerManagerFromConfig(IntPtr config);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr createServerManagerFromFile([MarshalAs(UnmanagedType.LPUTF8Str)] string config_file_path);
+    internal static extern IntPtr createServerManagerFromFile(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string config_file_path
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern IntPtr createServerManagerFromContents([MarshalAs(UnmanagedType.LPUTF8Str)] string yaml_config_contents);
+    internal static extern IntPtr createServerManagerFromContents(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string yaml_config_contents
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void destroyServerManager(IntPtr manager);
@@ -428,7 +555,13 @@ internal static class NativeMethods
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.I1)]
-    internal static extern bool serverManagerGetEndpointOf(IntPtr manager, LuxonServerType server_type, LuxonServerProtocol server_proto, byte[] out_address, nuint max_len);
+    internal static extern bool serverManagerGetEndpointOf(
+        IntPtr manager,
+        LuxonServerType server_type,
+        LuxonServerProtocol server_proto,
+        byte[] out_address,
+        nuint max_len
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern nuint serverManagerGetConnectionCount(IntPtr manager);
@@ -462,7 +595,9 @@ internal static class NativeMethods
     internal static extern void destroyCommandRestarter(IntPtr restarter);
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
-    internal static extern uint registerGamePlugin([MarshalAs(UnmanagedType.LPUTF8Str)] string plugin_name);
+    internal static extern uint registerGamePlugin(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string plugin_name
+    );
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     [return: MarshalAs(UnmanagedType.I1)]

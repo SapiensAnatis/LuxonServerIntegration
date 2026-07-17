@@ -9,35 +9,35 @@ public enum LuxonServerType
     None = 0,
     NameServer = 1,
     MasterServer = 2,
-    GameServer = 3
+    GameServer = 3,
 }
 
 public enum LuxonServerProtocol
 {
     Udp = 0,
     Tcp = 1,
-    WebSocket = 2
+    WebSocket = 2,
 }
 
 public enum LuxonDeliveryMode
 {
     Unreliable = 0,
     Reliable = 1,
-    Unsequenced = 2
+    Unsequenced = 2,
 }
 
 public enum LuxonEventReceiversType
 {
     All = 0,
     Group = 1,
-    Actors = 2
+    Actors = 2,
 }
 
 public enum LuxonGamePluginResult : byte
 {
     Continue = 0,
     Fail = 1,
-    Cancel = 2
+    Cancel = 2,
 }
 
 public enum LuxonLogLevel
@@ -48,7 +48,7 @@ public enum LuxonLogLevel
     Warn = 3,
     Error = 4,
     Critical = 5,
-    Off = 6
+    Off = 6,
 }
 
 public readonly record struct EventRoutingMetadata(
@@ -56,7 +56,8 @@ public readonly record struct EventRoutingMetadata(
     int SenderActorId,
     LuxonDeliveryMode DeliveryMode,
     byte Channel,
-    byte InterestGroup);
+    byte InterestGroup
+);
 
 public readonly record struct GameConfigState(
     byte Flags,
@@ -64,11 +65,16 @@ public readonly record struct GameConfigState(
     bool IsOpen,
     bool IsVisible,
     byte MaxPeers,
-    int MasterActor);
+    int MasterActor
+);
 
 public readonly record struct GameTtlConfig(int PlayerTtl, int EmptyTtl);
 
-public readonly record struct JoinValidationResult(bool Allowed, short ErrorCode, string ErrorMessage);
+public readonly record struct JoinValidationResult(
+    bool Allowed,
+    short ErrorCode,
+    string ErrorMessage
+);
 
 public readonly record struct LobbyQueryResult(bool Success, string Payload);
 
@@ -90,7 +96,10 @@ public sealed class LuxonException : Exception
 public sealed class LuxonFeatureUnavailableException : NotSupportedException
 {
     public LuxonFeatureUnavailableException(string featureName, Exception? innerException = null)
-        : base($"The loaded Luxon Server FFI library does not expose the '{featureName}' feature.", innerException)
+        : base(
+            $"The loaded Luxon Server FFI library does not expose the '{featureName}' feature.",
+            innerException
+        )
     {
         FeatureName = featureName;
     }
@@ -165,13 +174,9 @@ public abstract class NativeResource : IDisposable
                         NativeMethods.luxonClearLastError();
                     }
                 }
-                catch
-                {
-                }
+                catch { }
             }
-            catch
-            {
-            }
+            catch { }
         }
     }
 
@@ -231,8 +236,8 @@ internal static class LuxonInteropHelpers
         throw new LuxonException(errorType, message);
     }
 
-    internal static string PtrToUtf8String(IntPtr ptr)
-        => ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
+    internal static string PtrToUtf8String(IntPtr ptr) =>
+        ptr == IntPtr.Zero ? string.Empty : Marshal.PtrToStringUTF8(ptr) ?? string.Empty;
 
     internal static string DecodeUtf8(byte[] buffer, nuint? explicitLength = null)
     {
