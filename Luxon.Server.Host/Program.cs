@@ -19,20 +19,16 @@ IConfigurationRoot configuration = new ConfigurationBuilder()
     .AddEnvironmentVariables()
     .Build();
 
-var logImports = new LogImports();
-
-LuxonServerRuntime.EnableCustomLogSink(true);
-LuxonServerRuntime.SetImports(
-    new LuxonServerImports() { CustomLogSink = logImports.CustomLogSink }
-);
-
 using var pluginManager = new PluginManager(configuration);
 pluginManager.LoadPluginsFromConfig();
 
 var gameManager = new GameManager();
 var coroutineMonitor = new CoroutineMonitor();
 
+var logImports = new LogImports();
 var csImports = new CSharpServerImports(pluginManager, gameManager, coroutineMonitor);
+
+LuxonServerRuntime.EnableCustomLogSink(true);
 
 LuxonServerRuntime.SetImports(
     new LuxonServerImports
