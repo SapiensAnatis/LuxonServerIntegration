@@ -26,9 +26,7 @@ internal sealed class GameManager
     /// This must be thread-safe as Tasks may resume, and set info results thereafter, on any thread.
     /// </remarks>
     /// </summary>
-    public ConcurrentQueue<InfoCallbackContext> CommandRestartQueue { get; } = new();
-
-    public ThreadLocal<InfoCallbackContext?> CurrentCallbackContext { get; } = new();
+    public ConcurrentQueue<InfoCallbackContext> ResultSetQueue { get; } = new();
 
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {

@@ -13,10 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libmbedtls-dev \
     && rm -rf /var/lib/apt/lists/* 
 
-ARG LUXON_SERVER_COMMIT_HASH="efc288fe6ff21764ab1bd934347f596bab955b02"
+ARG LUXON_SERVER_COMMIT_HASH="8ed5dc1c04f60298621fded74c5b39088fd3a0bc"
 
 RUN git init -q && \
-    git remote add origin https://gitlab.com/luxon_project/LuxonServer.git && \
+    git remote add origin https://github.com/SapiensAnatis/LuxonServer.git && \
     git fetch --depth 1 origin "$LUXON_SERVER_COMMIT_HASH" && \
     git checkout FETCH_HEAD && \
     git submodule update --init --recursive --depth 1 

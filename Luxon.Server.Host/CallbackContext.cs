@@ -19,8 +19,15 @@ internal sealed class InfoCallbackContext : TaskContext
 {
     public required CallInfo CallInfo { get; init; }
 
-    public required Message ManagedMessage { get; init; }
+    public required SerMessageRef? Request { get; init; }
 
-    // Do not dispose CommandRestarter - it is freed by native on calling Restart()
-    public required CommandRestarter CommandRestarter { get; init; }
+    public required Message? ManagedRequest { get; init; }
+
+    public required CoroutineHandle CoroutineHandle { get; init; }
+
+    public override void Dispose()
+    {
+        base.Dispose();
+        this.CoroutineHandle.Dispose();
+    }
 }

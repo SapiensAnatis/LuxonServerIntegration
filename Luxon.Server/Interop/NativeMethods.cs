@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Luxon.Server.Interop;
 
-internal static class NativeMethods
+internal static partial class NativeMethods
 {
     internal const string LibraryName = "luxon_server";
 
@@ -608,4 +608,13 @@ internal static class NativeMethods
 
     [DllImport(LibraryName, CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     internal static extern void luxonSetServerImports(ref NativeImportsStruct imports);
+
+    [LibraryImport(LibraryName)]
+    internal static partial CoroutineHandle luxonGetActiveCoroutine();
+
+    [LibraryImport(LibraryName)]
+    internal static partial void luxonResumeCoroutine(CoroutineHandle handle, byte result);
+
+    [LibraryImport(LibraryName)]
+    internal static partial void luxonDestroyCoroutine(CoroutineHandle handle);
 }

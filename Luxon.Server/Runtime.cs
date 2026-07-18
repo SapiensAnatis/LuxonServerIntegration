@@ -871,6 +871,18 @@ public static class LuxonServerRuntime
         }
     }
 
+    public static CoroutineHandle GetActiveCoroutine()
+    {
+        try
+        {
+            return LuxonInteropHelpers.Checked(NativeMethods.luxonGetActiveCoroutine);
+        }
+        catch (EntryPointNotFoundException ex)
+        {
+            throw new LuxonFeatureUnavailableException("coroutines", ex);
+        }
+    }
+
     internal static void ReleaseRegistration(LuxonServerImportsRegistration registration)
     {
         lock (s_sync)

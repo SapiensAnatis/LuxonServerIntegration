@@ -12,7 +12,6 @@ namespace Luxon.Server.Host;
 
 internal sealed partial class CSharpServerImports
 {
-    private readonly ServerManager serverManager;
     private readonly PluginManager pluginManager;
     private readonly GameManager gameManager;
 
@@ -23,13 +22,8 @@ internal sealed partial class CSharpServerImports
     )]
     private readonly ILogger<CSharpServerImports> logger;
 
-    public CSharpServerImports(
-        ServerManager serverManager,
-        PluginManager pluginManager,
-        GameManager gameManager
-    )
+    public CSharpServerImports(PluginManager pluginManager, GameManager gameManager)
     {
-        this.serverManager = serverManager;
         this.pluginManager = pluginManager;
         this.gameManager = gameManager;
 
@@ -55,12 +49,6 @@ internal sealed partial class CSharpServerImports
         bool createIfNotExist
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         Message managedRequest = request.ToManagedMessage();
@@ -101,12 +89,6 @@ internal sealed partial class CSharpServerImports
         GamePeer joiner
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         this.LogJoinGameCalled();
 
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
@@ -145,12 +127,6 @@ internal sealed partial class CSharpServerImports
         byte cacheOp
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         this.LogEventRaised(evt.RoutingMetadata.Code);
 
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
@@ -190,12 +166,6 @@ internal sealed partial class CSharpServerImports
         bool failedOnCreate
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, null);
-        }
-
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by FinishCommand, either synchronously or upon re-entry.
@@ -230,12 +200,6 @@ internal sealed partial class CSharpServerImports
         SerValueRef expected
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         Message managedRequest = request.ToManagedMessage();
@@ -281,12 +245,6 @@ internal sealed partial class CSharpServerImports
         SerValueRef expected
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         Message managedRequest = request.ToManagedMessage();
@@ -328,12 +286,6 @@ internal sealed partial class CSharpServerImports
         GamePeer leaver
     )
     {
-        if (this.gameManager.CurrentCallbackContext.Value is { } previousContext)
-        {
-            // The command has been restarted because a suspended command returned a plugin result.
-            return this.HandleCommandRestart(previousContext, request);
-        }
-
         IGamePlugin plugin = this.GetPlugin(game, pluginId);
 
         Message managedRequest = request.ToManagedMessage();
@@ -364,7 +316,7 @@ internal sealed partial class CSharpServerImports
         return this.HandlePluginTaskResult(pluginCallback, info, request, managedRequest, cts);
     }
 
-    private static LuxonGamePluginResult FinishCommand(
+    public static LuxonGamePluginResult FinishCommand(
         CallInfo info,
         SerMessageRef? request,
         Message? managedRequest
@@ -382,44 +334,6 @@ internal sealed partial class CSharpServerImports
         if (request is not null && managedRequest is not null)
         {
             request.Replace(managedRequest);
-        }
-
-        return result;
-    }
-
-    private LuxonGamePluginResult HandleCommandRestart(
-        InfoCallbackContext previousContext,
-        SerMessageRef? request
-    )
-    {
-        this.gameManager.CurrentCallbackContext.Value = null;
-
-        if (previousContext.CallInfo is null)
-        {
-            throw new InvalidOperationException(
-                "A CommandRestarter was invoked, but context.CallInfo was null"
-            );
-        }
-
-        this.DetectedPreviousContext();
-
-        var result = FinishCommand(
-            previousContext.CallInfo,
-            request,
-            previousContext.ManagedMessage
-        );
-
-        this.LogPluginCallbackSetResultAsynchronously(
-            previousContext.CallInfo.GetType().Name,
-            result
-        );
-
-        // If the plugin has set a result, but is now suspended again, it will be monitored by the task queue; we added it when we originally added it to the info queue.
-        // Do not dispose in this case.
-
-        if (previousContext.PluginTask.IsCompleted)
-        {
-            previousContext.Dispose();
         }
 
         return result;
@@ -470,7 +384,7 @@ internal sealed partial class CSharpServerImports
         this.LogPluginSuspendedWithoutSettingResult();
 
         // This will suspend the active command until we call Restart on it
-        CommandRestarter commandRestarter = this.serverManager.TakeCommandRestarter();
+        CoroutineHandle coroutineHandle = LuxonServerRuntime.GetActiveCoroutine();
 
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by re-entry logic.
         InfoCallbackContext infoCtx = new()
@@ -478,8 +392,9 @@ internal sealed partial class CSharpServerImports
             PluginTask = pluginCallback,
             CancellationTokenSource = cts,
             CallInfo = info,
-            CommandRestarter = commandRestarter,
-            ManagedMessage = managedRequest,
+            CoroutineHandle = coroutineHandle,
+            ManagedRequest = managedRequest,
+            Request = request,
         };
 #pragma warning restore CA2000
 
@@ -487,7 +402,7 @@ internal sealed partial class CSharpServerImports
 
         this.LogSuspendedCommand();
 
-        return LuxonGamePluginResult.Continue;
+        return LuxonGamePluginResult.Async;
     }
 
     private void SetupTaskCallbacks(TaskContext ctx)
@@ -500,7 +415,7 @@ internal sealed partial class CSharpServerImports
     {
         this.SetupTaskCallbacks(ctx);
 
-        ctx.CallInfo.OnResultSet(() => this.gameManager.CommandRestartQueue.Enqueue(ctx));
+        ctx.CallInfo.OnResultSet(() => this.gameManager.ResultSetQueue.Enqueue(ctx));
     }
 
     private IGamePlugin GetPlugin(Game game, uint pluginId)
@@ -601,7 +516,10 @@ internal sealed partial class CSharpServerImports
     [LoggerMessage(LogLevel.Debug, "Plugin suspended without setting result")]
     partial void LogPluginSuspendedWithoutSettingResult();
 
-    [LoggerMessage(LogLevel.Debug, "Suspended command and set up callbacks - returning Continue")]
+    [LoggerMessage(
+        LogLevel.Debug,
+        "Suspended command and set up callbacks - returning LuxonGamePluginResult.Async"
+    )]
     partial void LogSuspendedCommand();
 
     [LoggerMessage(LogLevel.Trace, "Event raised: 0x{evt:}X")]

@@ -32,11 +32,7 @@ pluginManager.LoadPluginsFromConfig();
 
 var gameManager = new GameManager();
 
-using var serverManager = ServerManager.CreateFromFile(
-    Path.Join(AppContext.BaseDirectory, "config.yml")
-);
-
-var csImports = new CSharpServerImports(serverManager, pluginManager, gameManager);
+var csImports = new CSharpServerImports(pluginManager, gameManager);
 
 LuxonServerRuntime.SetImports(
     new LuxonServerImports
@@ -55,8 +51,25 @@ LuxonServerRuntime.SetImports(
 
 LuxonServerRuntime.UnhandledCallbackException += OnUnhandledPluginException;
 
+using var serverManager = ServerManager.CreateFromFile(
+    Path.Join(AppContext.BaseDirectory, "config.yml")
+);
+
 while (serverManager.RunOnce())
 {
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the task queue monitor.
+    if (gameManager.ResultSetQueue.TryDequeue(out var commandContext))
+#pragma warning restore CA2000
+    {
+        LuxonGamePluginResult result = CSharpServerImports.FinishCommand(
+            commandContext.CallInfo,
+            commandContext.Request,
+            commandContext.ManagedRequest
+        );
+
+        commandContext.CoroutineHandle.Resume(result);
+    }
+
     if (gameManager.CompletedTaskQueue.TryDequeue(out var taskContext))
     {
         var task = taskContext.PluginTask;
@@ -86,13 +99,13 @@ while (serverManager.RunOnce())
                 // If the task was cancelled or failed before setting a result, then set an error and restart the command.
                 // This will enqueue it in CommandRestartQueue.
 #if DEBUG
-                int oldLength = gameManager.CommandRestartQueue.Count;
+                int oldLength = gameManager.ResultSetQueue.Count;
 #endif
                 infoContext.CallInfo.Fail();
 
 #if DEBUG
                 Debug.Assert(
-                    gameManager.CommandRestartQueue.Count == oldLength + 1,
+                    gameManager.ResultSetQueue.Count == oldLength + 1,
                     "Calling Fail should add the info to the queue"
                 );
 #endif
@@ -100,12 +113,6 @@ while (serverManager.RunOnce())
         }
 
         taskContext.Dispose();
-    }
-
-    if (gameManager.CommandRestartQueue.TryDequeue(out var commandContext))
-    {
-        gameManager.CurrentCallbackContext.Value = commandContext;
-        commandContext.CommandRestarter.Restart();
     }
 }
 

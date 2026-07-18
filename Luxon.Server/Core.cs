@@ -38,6 +38,7 @@ public enum LuxonGamePluginResult : byte
     Continue = 0,
     Fail = 1,
     Cancel = 2,
+    Async = 3,
 }
 
 public enum LuxonLogLevel
