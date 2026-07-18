@@ -14,6 +14,7 @@ internal sealed partial class CSharpServerImports
 {
     private readonly PluginManager pluginManager;
     private readonly GameManager gameManager;
+    private readonly CoroutineMonitor coroutineMonitor;
 
     [SuppressMessage(
         "Microsoft.Performance",
@@ -22,10 +23,15 @@ internal sealed partial class CSharpServerImports
     )]
     private readonly ILogger<CSharpServerImports> logger;
 
-    public CSharpServerImports(PluginManager pluginManager, GameManager gameManager)
+    public CSharpServerImports(
+        PluginManager pluginManager,
+        GameManager gameManager,
+        CoroutineMonitor coroutineMonitor
+    )
     {
         this.pluginManager = pluginManager;
         this.gameManager = gameManager;
+        this.coroutineMonitor = coroutineMonitor;
 
         this.logger = LoggerConfiguration.Factory.CreateLogger<CSharpServerImports>();
     }
@@ -408,14 +414,14 @@ internal sealed partial class CSharpServerImports
     private void SetupTaskCallbacks(TaskContext ctx)
     {
         ctx.PluginTask.GetAwaiter()
-            .OnCompleted(() => this.gameManager.CompletedTaskQueue.Enqueue(ctx));
+            .OnCompleted(() => this.coroutineMonitor.NotifyPluginTaskComleted(ctx));
     }
 
     private void SetupInfoCallbacks(InfoCallbackContext ctx)
     {
         this.SetupTaskCallbacks(ctx);
 
-        ctx.CallInfo.OnResultSet(() => this.gameManager.ResultSetQueue.Enqueue(ctx));
+        ctx.CallInfo.OnResultSet(() => this.coroutineMonitor.NotifyCallInfoResultSet(ctx));
     }
 
     private IGamePlugin GetPlugin(Game game, uint pluginId)

@@ -10,24 +10,6 @@ internal sealed class GameManager
 {
     private readonly Dictionary<nint, GameAdditionalFields> additionalFields = [];
 
-    /// <summary>
-    /// Queue of Task objects representing completed plugin callbacks. This is posted to by the awaiters of the Task
-    /// objects when they are completed.
-    /// <remarks>
-    /// This must be thread-safe as Tasks may complete on any thread.
-    /// </remarks>
-    /// </summary>
-    public ConcurrentQueue<TaskContext> CompletedTaskQueue { get; } = new();
-
-    /// <summary>
-    /// Queue of Task objects representing completed plugin callbacks. This is posted to by the CallInfo's OnResultSet
-    /// callback.
-    /// <remarks>
-    /// This must be thread-safe as Tasks may resume, and set info results thereafter, on any thread.
-    /// </remarks>
-    /// </summary>
-    public ConcurrentQueue<InfoCallbackContext> ResultSetQueue { get; } = new();
-
     public void AddPluginToGame(nint gameHandle, uint pluginId, IGamePlugin pluginInstance)
     {
         ref var gameAdditionalFields = ref CollectionsMarshal.GetValueRefOrAddDefault(
