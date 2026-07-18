@@ -616,5 +616,5 @@ internal static partial class NativeMethods
     internal static partial void luxonResumeCoroutine(CoroutineHandle handle, byte result);
 
     [LibraryImport(LibraryName)]
-    internal static partial void luxonDestroyCoroutine(CoroutineHandle handle);
+    internal static partial void luxonDestroyCoroutine(nint rawHandle);
 }

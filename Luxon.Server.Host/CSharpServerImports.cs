@@ -419,8 +419,6 @@ internal sealed partial class CSharpServerImports
 
     private void SetupInfoCallbacks(InfoCallbackContext ctx)
     {
-        this.SetupTaskCallbacks(ctx);
-
         ctx.CallInfo.OnResultSet(() => this.coroutineMonitor.NotifyCallInfoResultSet(ctx));
     }
 
