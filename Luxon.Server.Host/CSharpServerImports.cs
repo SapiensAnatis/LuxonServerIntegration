@@ -353,25 +353,34 @@ internal sealed partial class CSharpServerImports
         CancellationTokenSource cts
     )
     {
-        if (pluginCallback.IsCompletedSuccessfully)
+        if (pluginCallback.IsCompleted)
         {
-            // The plugin callback completed synchronously (or close enough to it).
+            if (pluginCallback.IsCompletedSuccessfully)
+            {
+                // The plugin callback completed synchronously (or close enough to it).
 
-            this.LogPluginCallbackReturnedSynchronously(info.GetType().Name, info.Result);
+                this.LogPluginCallbackReturnedSynchronously(info.GetType().Name, info.Result);
 
-            cts.Dispose();
+                cts.Dispose();
 
-            return FinishCommand(info, request, managedRequest);
+                return FinishCommand(info, request, managedRequest);
+            }
+
+            if (pluginCallback.IsFaulted)
+            {
+                // The task faulted synchronously.
+                // Use ExceptionDispatchInfo so that CSharpServerImports does not appear in the stack trace.
+                ExceptionDispatchInfo
+                    .Capture(pluginCallback.Exception.InnerException ?? pluginCallback.Exception)
+                    .Throw();
+            }
+
+            throw new UnreachableException(
+                $"Plugin callback had unexpected synchronous status: {pluginCallback.Status}"
+            );
         }
 
-        if (pluginCallback.IsFaulted)
-        {
-            // The task faulted synchronously.
-            // Use ExceptionDispatchInfo so that CSharpServerImports does not appear in the stack trace.
-            ExceptionDispatchInfo
-                .Capture(pluginCallback.Exception.InnerException ?? pluginCallback.Exception)
-                .Throw();
-        }
+        this.coroutineMonitor.NotifyCallbackSuspended(pluginCallback);
 
         if (info.HasResult())
         {

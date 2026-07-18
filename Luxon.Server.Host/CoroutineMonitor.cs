@@ -5,6 +5,11 @@ using Microsoft.Extensions.Logging;
 
 namespace Luxon.Server.Host;
 
+[SuppressMessage(
+    "Design",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "Lives for entire process lifetime"
+)]
 internal sealed partial class CoroutineMonitor
 {
     /// <summary>
@@ -14,7 +19,7 @@ internal sealed partial class CoroutineMonitor
     /// This must be thread-safe as Tasks may complete on any thread.
     /// </remarks>
     /// </summary>
-    private ConcurrentQueue<TaskContext> completedTaskQueue = new();
+    private readonly ConcurrentQueue<TaskContext> completedTaskQueue;
 
     /// <summary>
     /// Queue of Task objects representing completed plugin callbacks. This is posted to by the CallInfo's OnResultSet
@@ -23,7 +28,28 @@ internal sealed partial class CoroutineMonitor
     /// This must be thread-safe as Tasks may resume, and set info results thereafter, on any thread.
     /// </remarks>
     /// </summary>
-    private ConcurrentQueue<InfoCallbackContext> resultSetQueue = new();
+    private readonly ConcurrentQueue<InfoCallbackContext> resultSetQueue;
+
+    /// <summary>
+    /// Set of Tasks that are currently suspended. Monitored to ensure Tasks are not left dangling.
+    /// </summary>
+    private readonly ConcurrentDictionary<Task, object?> suspendedTasks;
+
+    private readonly Timer _diagnosticsTimer;
+
+    public CoroutineMonitor()
+    {
+        this.completedTaskQueue = new();
+        this.resultSetQueue = new();
+        this.suspendedTasks = new();
+
+        this._diagnosticsTimer = new Timer(
+            _ => this.LogStatistics(),
+            null,
+            TimeSpan.Zero,
+            TimeSpan.FromSeconds(30)
+        );
+    }
 
     [SuppressMessage(
         "Microsoft.Performance",
@@ -32,6 +58,14 @@ internal sealed partial class CoroutineMonitor
     )]
     private readonly ILogger<CoroutineMonitor> logger =
         LoggerConfiguration.Factory.CreateLogger<CoroutineMonitor>();
+
+    public void NotifyCallbackSuspended(Task task)
+    {
+        if (!this.suspendedTasks.TryAdd(task, null))
+        {
+            this.LogFailedToAddTask();
+        }
+    }
 
     public void NotifyCallInfoResultSet(InfoCallbackContext ctx)
     {
@@ -45,7 +79,7 @@ internal sealed partial class CoroutineMonitor
 
     public void ServiceCompletedCallInfos()
     {
-#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the task queue monitor.
+#pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by ServiceCompletedTasks.
         if (this.resultSetQueue.TryDequeue(out var commandContext))
 #pragma warning restore CA2000
         {
@@ -56,6 +90,20 @@ internal sealed partial class CoroutineMonitor
             );
 
             commandContext.CoroutineHandle.Resume(result);
+
+            // Pass it on to the completed task queue, if already completed, but otherwise set it up to join that queue
+            // once the task is completed. This allows the task queue to dispose of contexts with the knowledge that
+            // their info coroutine has already been processed.
+            if (commandContext.PluginTask.IsCompleted)
+            {
+                this.NotifyPluginTaskCompleted(commandContext);
+            }
+            else
+            {
+                commandContext
+                    .PluginTask.GetAwaiter()
+                    .OnCompleted(() => this.NotifyPluginTaskCompleted(commandContext));
+            }
         }
     }
 
@@ -106,8 +154,11 @@ internal sealed partial class CoroutineMonitor
                 }
             }
 
-            // Don't dispose - if the queues are busy we may not have handled the info result yet
-            // taskContext.Dispose();
+            taskContext.Dispose();
+            if (!this.suspendedTasks.TryRemove(task, out _))
+            {
+                this.LogFailedToRemoveTask();
+            }
         }
     }
 
@@ -121,6 +172,13 @@ internal sealed partial class CoroutineMonitor
         this.LogUnhandledExceptionInPluginCallback(displayException);
     }
 
+    private void LogStatistics()
+    {
+        this.LogSize("SuspendedTasks", this.suspendedTasks.Count);
+        this.LogSize("CompletedTaskQueue", this.completedTaskQueue.Count);
+        this.LogSize("ResultSetQueue", this.resultSetQueue.Count);
+    }
+
     [LoggerMessage(LogLevel.Error, "Unhandled exception in plugin callback")]
     private partial void LogUnhandledExceptionInPluginCallback(Exception exception);
 
@@ -129,4 +187,13 @@ internal sealed partial class CoroutineMonitor
 
     [LoggerMessage(LogLevel.Warning, "Plugin task was canceled")]
     private partial void LogPluginTaskWasCanceled();
+
+    [LoggerMessage(LogLevel.Debug, "{Name} size: {Size}")]
+    private partial void LogSize(string name, int size);
+
+    [LoggerMessage(LogLevel.Error, "Failed to add suspended task reference")]
+    partial void LogFailedToAddTask();
+
+    [LoggerMessage(LogLevel.Error, "Failed to remove suspended task reference")]
+    partial void LogFailedToRemoveTask();
 }
