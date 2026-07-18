@@ -53,7 +53,7 @@ using var serverManager = ServerManager.CreateFromFile(
 
 while (serverManager.RunOnce())
 {
-    coroutineMonitor.ServiceCallInfoCoroutines();
+    coroutineMonitor.ServiceCompletedCallInfos();
     coroutineMonitor.ServiceCompletedTasks();
 }
 

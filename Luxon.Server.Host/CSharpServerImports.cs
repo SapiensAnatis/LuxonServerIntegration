@@ -414,7 +414,7 @@ internal sealed partial class CSharpServerImports
     private void SetupTaskCallbacks(TaskContext ctx)
     {
         ctx.PluginTask.GetAwaiter()
-            .OnCompleted(() => this.coroutineMonitor.NotifyPluginTaskComleted(ctx));
+            .OnCompleted(() => this.coroutineMonitor.NotifyPluginTaskCompleted(ctx));
     }
 
     private void SetupInfoCallbacks(InfoCallbackContext ctx)

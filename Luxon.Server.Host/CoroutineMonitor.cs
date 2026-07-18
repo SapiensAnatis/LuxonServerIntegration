@@ -38,12 +38,12 @@ internal sealed partial class CoroutineMonitor
         this.resultSetQueue.Enqueue(ctx);
     }
 
-    public void NotifyPluginTaskComleted(TaskContext ctx)
+    public void NotifyPluginTaskCompleted(TaskContext ctx)
     {
         this.completedTaskQueue.Enqueue(ctx);
     }
 
-    public void ServiceCallInfoCoroutines()
+    public void ServiceCompletedCallInfos()
     {
 #pragma warning disable CA2000 // Dispose objects before losing scope. Will be disposed by the task queue monitor.
         if (this.resultSetQueue.TryDequeue(out var commandContext))
@@ -106,7 +106,8 @@ internal sealed partial class CoroutineMonitor
                 }
             }
 
-            taskContext.Dispose();
+            // Don't dispose - if the queues are busy we may not have handled the info result yet
+            // taskContext.Dispose();
         }
     }
 
